@@ -1,0 +1,18 @@
+[package]
+name = "kamap-core"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+serde_yaml = { workspace = true }
+git2 = { workspace = true }
+rusqlite = { workspace = true }
+globset = { workspace = true }
+glob = { workspace = true }
+tracing = { workspace = true }
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+uuid = { workspace = true }
+chrono = { workspace = true }

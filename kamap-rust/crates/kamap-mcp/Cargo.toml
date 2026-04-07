@@ -1,0 +1,11 @@
+[package]
+name = "kamap-mcp"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+kamap-core = { path = "../kamap-core" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tokio = { workspace = true }
+anyhow = { workspace = true }

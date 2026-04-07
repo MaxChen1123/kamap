@@ -1,0 +1,22 @@
+[package]
+name = "kamap-cli"
+version.workspace = true
+edition.workspace = true
+
+[[bin]]
+name = "kamap"
+path = "src/main.rs"
+
+[dependencies]
+kamap-core = { path = "../kamap-core" }
+kamap-plugin-localfs = { path = "../kamap-plugin-localfs" }
+kamap-plugin-sqlite = { path = "../kamap-plugin-sqlite" }
+clap = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+anyhow = { workspace = true }
+colored = { workspace = true }
+uuid = { workspace = true }
+chrono = { workspace = true }

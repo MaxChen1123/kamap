@@ -1,0 +1,5 @@
+target/
+kamap-rust/target/
+.plan/
+.kamap.yaml
+.kamap/
