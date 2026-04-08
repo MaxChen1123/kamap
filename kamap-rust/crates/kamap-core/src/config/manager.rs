@@ -133,15 +133,37 @@ impl ConfigManager {
     /// - `shared_path`: `kamap.yaml`（团队共享）
     /// - `local_path`: `.kamap.yaml`（个人本地）
     ///
-    /// 两个文件都可选，但至少要有一个存在。
+    /// 两个文件都可选，但至少要有一个成功加载。
+    /// 如果其中一个文件损坏（格式错误、为空等），会打印警告并继续使用另一个正常的配置。
+    /// 只有两个文件都无法加载时才返回错误。
     /// 合并规则：assets、mappings、plugins、policies 追加合并，个人配置的 discovery 覆盖共享的。
     pub fn load_merged(shared_path: Option<&Path>, local_path: Option<&Path>) -> Result<Self> {
+        let mut shared_error: Option<String> = None;
+        let mut local_error: Option<String> = None;
+
         let shared_config = if let Some(p) = shared_path {
             if p.exists() {
-                let content = std::fs::read_to_string(p)
-                    .with_context(|| format!("Failed to read shared config: {}", p.display()))?;
-                Some(serde_yaml::from_str::<ProjectConfig>(&content)
-                    .with_context(|| "Failed to parse shared config (kamap.yaml)")?)
+                match std::fs::read_to_string(p) {
+                    Ok(content) => {
+                        match serde_yaml::from_str::<ProjectConfig>(&content) {
+                            Ok(config) => Some(config),
+                            Err(e) => {
+                                shared_error = Some(format!(
+                                    "Failed to parse shared config ({}): {}",
+                                    p.display(), e
+                                ));
+                                None
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        shared_error = Some(format!(
+                            "Failed to read shared config ({}): {}",
+                            p.display(), e
+                        ));
+                        None
+                    }
+                }
             } else {
                 None
             }
@@ -151,10 +173,27 @@ impl ConfigManager {
 
         let local_config = if let Some(p) = local_path {
             if p.exists() {
-                let content = std::fs::read_to_string(p)
-                    .with_context(|| format!("Failed to read local config: {}", p.display()))?;
-                Some(serde_yaml::from_str::<ProjectConfig>(&content)
-                    .with_context(|| "Failed to parse local config (.kamap.yaml)")?)
+                match std::fs::read_to_string(p) {
+                    Ok(content) => {
+                        match serde_yaml::from_str::<ProjectConfig>(&content) {
+                            Ok(config) => Some(config),
+                            Err(e) => {
+                                local_error = Some(format!(
+                                    "Failed to parse local config ({}): {}",
+                                    p.display(), e
+                                ));
+                                None
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        local_error = Some(format!(
+                            "Failed to read local config ({}): {}",
+                            p.display(), e
+                        ));
+                        None
+                    }
+                }
             } else {
                 None
             }
@@ -162,8 +201,33 @@ impl ConfigManager {
             None
         };
 
+        // 如果两个配置都无法加载，返回错误（包含具体的失败原因）
         if shared_config.is_none() && local_config.is_none() {
-            anyhow::bail!("No config file found. Run `kamap init` to create kamap.yaml");
+            let mut reasons = Vec::new();
+            if let Some(e) = &shared_error {
+                reasons.push(e.clone());
+            }
+            if let Some(e) = &local_error {
+                reasons.push(e.clone());
+            }
+            if reasons.is_empty() {
+                anyhow::bail!("No config file found. Run `kamap init` to create kamap.yaml");
+            } else {
+                anyhow::bail!(
+                    "All config files failed to load:\n  {}",
+                    reasons.join("\n  ")
+                );
+            }
+        }
+
+        // 如果只有一个文件出错，打印警告但继续使用另一个正常的配置
+        if let Some(e) = &shared_error {
+            eprintln!("⚠️  {}", e);
+            eprintln!("   Continuing with local config (.kamap.yaml) only.");
+        }
+        if let Some(e) = &local_error {
+            eprintln!("⚠️  {}", e);
+            eprintln!("   Continuing with shared config (kamap.yaml) only.");
         }
 
         // 合并配置
