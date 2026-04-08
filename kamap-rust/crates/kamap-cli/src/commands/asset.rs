@@ -14,6 +14,10 @@ pub struct AssetArgs {
 
     #[arg(long, global = true)]
     pub config: Option<String>,
+
+    /// Write to kamap.yaml (shared/team config) instead of .kamap.yaml (personal)
+    #[arg(long, global = true)]
+    pub shared: bool,
 }
 
 #[derive(Subcommand)]
@@ -65,15 +69,16 @@ pub struct AssetCheckArgs {
 }
 
 pub fn run(args: AssetArgs) -> Result<()> {
+    let shared = args.shared;
     match args.command {
-        AssetCommands::Add(a) => run_add(a, args.config.as_deref()),
-        AssetCommands::Remove(a) => run_remove(a, args.config.as_deref()),
+        AssetCommands::Add(a) => run_add(a, args.config.as_deref(), shared),
+        AssetCommands::Remove(a) => run_remove(a, args.config.as_deref(), shared),
         AssetCommands::List(a) => run_list(a, args.config.as_deref()),
         AssetCommands::Check(a) => run_check(a, args.config.as_deref()),
     }
 }
 
-fn run_add(args: AssetAddArgs, config_path: Option<&str>) -> Result<()> {
+fn run_add(args: AssetAddArgs, config_path: Option<&str>, shared: bool) -> Result<()> {
     let mut cm = load_config(config_path)?;
 
     let asset = AssetDef {
@@ -106,7 +111,7 @@ fn run_add(args: AssetAddArgs, config_path: Option<&str>) -> Result<()> {
     }
 
     cm.add_asset(asset)?;
-    cm.save()?;
+    cm.save_to(shared)?;
 
     if args.output == "json" {
         println!(
@@ -120,10 +125,10 @@ fn run_add(args: AssetAddArgs, config_path: Option<&str>) -> Result<()> {
     Ok(())
 }
 
-fn run_remove(args: AssetRemoveArgs, config_path: Option<&str>) -> Result<()> {
+fn run_remove(args: AssetRemoveArgs, config_path: Option<&str>, shared: bool) -> Result<()> {
     let mut cm = load_config(config_path)?;
     let removed = cm.remove_asset(&args.id)?;
-    cm.save()?;
+    cm.save_to(shared)?;
 
     if args.output == "json" {
         println!(

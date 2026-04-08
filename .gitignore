@@ -3,3 +3,4 @@ kamap-rust/target/
 .plan/
 .kamap.yaml
 .kamap/
+./kamap-skill/bin/

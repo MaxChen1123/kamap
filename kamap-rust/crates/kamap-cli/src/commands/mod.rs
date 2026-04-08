@@ -39,6 +39,7 @@ pub fn find_config_dir() -> PathBuf {
 ///
 /// 如果指定了 `config_path`，则仅加载该文件（向后兼容）。
 /// 否则自动查找 `kamap.yaml`（共享）和 `.kamap.yaml`（个人），合并加载。
+/// 默认写入目标为 `.kamap.yaml`（个人配置），使用 `--shared` 写入 `kamap.yaml`。
 pub fn load_config(config_path: Option<&str>) -> anyhow::Result<ConfigManager> {
     if let Some(path) = config_path {
         // 指定了具体路径，直接加载单个文件

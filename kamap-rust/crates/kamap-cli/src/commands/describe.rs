@@ -16,11 +16,20 @@ pub fn run(args: DescribeArgs) -> Result<()> {
         "commands": [
             {
                 "name": "scan",
-                "description": "Scan for impacted assets based on Git changes",
+                "description": "Scan for impacted assets based on Git changes. Writes results to .kamap/to-ack.json. Previously acknowledged impacts (same HEAD) are filtered.",
                 "params": {
                     "base": {"type": "string", "default": "origin/main", "description": "Base Git ref"},
                     "head": {"type": "string", "default": "HEAD", "description": "Head Git ref"},
                     "output": {"type": "string", "enum": ["text", "json"], "default": "text"}
+                }
+            },
+            {
+                "name": "scan ack",
+                "description": "Acknowledge impacts as handled (document synced). Marks entries in .kamap/to-ack.json. Next scan at same HEAD will skip acknowledged items.",
+                "params": {
+                    "all": {"type": "boolean", "description": "Acknowledge all pending impacts"},
+                    "ids": {"type": "string", "description": "Comma-separated mapping IDs to acknowledge"},
+                    "output": {"type": "string", "enum": ["text", "json"]}
                 }
             },
             {
@@ -41,7 +50,8 @@ pub fn run(args: DescribeArgs) -> Result<()> {
                     "reason": {"type": "string", "description": "Reason for the mapping"},
                     "lines": {"type": "string", "description": "Line range (e.g., 10-45)"},
                     "action": {"type": "string", "enum": ["review", "update", "verify", "acknowledge"]},
-                    "dry-run": {"type": "boolean", "default": true}
+                    "dry-run": {"type": "boolean", "default": true},
+                    "shared": {"type": "boolean", "default": false, "description": "Write to kamap.yaml (shared) instead of .kamap.yaml (personal)"}
                 }
             },
             {
@@ -50,7 +60,8 @@ pub fn run(args: DescribeArgs) -> Result<()> {
                 "params": {
                     "stdin": {"type": "boolean", "description": "Read JSON from stdin"},
                     "dry-run": {"type": "boolean", "default": true},
-                    "apply": {"type": "boolean", "description": "Actually write changes"}
+                    "apply": {"type": "boolean", "description": "Actually write changes"},
+                    "shared": {"type": "boolean", "default": false, "description": "Write to kamap.yaml (shared) instead of .kamap.yaml (personal)"}
                 }
             },
             {

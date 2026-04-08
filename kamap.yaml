@@ -1,0 +1,17 @@
+version: '1'
+plugins:
+- name: localfs
+  enabled: true
+assets: []
+mappings: []
+policies: []
+discovery:
+  annotation:
+    enabled: true
+    marker: '@kamap'
+  frontmatter:
+    enabled: true
+    key: kamap
+  naming:
+    enabled: false
+    rules: []

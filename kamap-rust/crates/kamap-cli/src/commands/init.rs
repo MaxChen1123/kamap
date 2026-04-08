@@ -13,25 +13,31 @@ pub struct InitArgs {
 }
 
 pub fn run(args: InitArgs) -> Result<()> {
-    let config_path = std::path::Path::new(SHARED_CONFIG_NAME);
+    let shared_path = std::path::Path::new(SHARED_CONFIG_NAME);
+    let local_path = std::path::Path::new(LOCAL_CONFIG_NAME);
 
-    if config_path.exists() {
+    if shared_path.exists() || local_path.exists() {
         if args.output == "json" {
             println!(
                 "{}",
                 serde_json::json!({
                     "status": "exists",
-                    "message": "kamap.yaml already exists"
+                    "message": "Config file(s) already exist"
                 })
             );
         } else {
-            println!("⚠️  kamap.yaml already exists. Skipping initialization.");
+            println!("⚠️  Config file(s) already exist. Skipping initialization.");
         }
         return Ok(());
     }
 
-    let cm = ConfigManager::new_default(config_path);
+    // 创建共享配置 (kamap.yaml) — 仅包含 plugins 和 discovery 等团队共享设置
+    let cm = ConfigManager::new_default(shared_path);
     cm.save()?;
+
+    // 创建个人配置 (.kamap.yaml) — 默认写入目标
+    let local_cm = ConfigManager::new_default(local_path);
+    local_cm.save()?;
 
     // 创建 .kamap/ 工作目录
     std::fs::create_dir_all(".kamap")?;
@@ -49,9 +55,11 @@ pub fn run(args: InitArgs) -> Result<()> {
     } else {
         println!("✅ kamap initialized!");
         println!("   Created: kamap.yaml          (shared, commit to Git)");
+        println!("   Created: .kamap.yaml         (personal, NOT committed to Git)");
         println!("   Created: .kamap/             (working directory)");
         println!();
-        println!("💡 Tip: Create .kamap.yaml for personal/local config (not committed to Git).");
+        println!("💡 Default: all commands write to .kamap.yaml (personal config).");
+        println!("   Use --shared to write to kamap.yaml (team config) instead.");
         println!();
         println!("Next steps:");
         println!("   1. Define assets:     kamap asset add --id my-doc --provider localfs --type markdown --target docs/my-doc.md");

@@ -1,0 +1,222 @@
+---
+name: kamap
+description: This skill should be used when users need to manage knowledge asset mappings, perform code-to-documentation impact analysis, track document synchronization, or maintain code-knowledge relationships in a Git repository. Trigger phrases include "document sync", "impact analysis", "knowledge asset", "code-doc mapping", "which docs need updating", "scan changes", "register asset", "add mapping", "kamap", "文档同步", "影响分析", "知识资产", "映射关系", "文档更新".
+---
+
+# kamap — Knowledge Asset Mapping
+
+## Overview
+
+kamap is a Git-based knowledge asset mapping and impact analysis framework. It establishes mapping relationships between code and knowledge assets (documents, databases, configurations), automatically locates affected assets when code changes, and reminds developers to synchronize updates.
+
+The kamap binary is located at `{SKILL_DIR}/bin/kamap`.
+
+## When to Use
+
+Activate this skill when the user's request involves any of the following:
+
+- **Document synchronization**: Updating docs after code changes, checking if documentation is stale, aligning code and docs
+- **Impact analysis**: Analyzing which assets are affected by code changes, PR/code review documentation checks, CI documentation validation
+- **Mapping management**: Creating, listing, validating, or discovering code-to-asset mappings
+- **Asset management**: Registering, listing, checking, or removing knowledge assets
+- **Project initialization**: Setting up kamap tracking for a repository
+
+## Key Conventions
+
+1. **All write operations default to dry-run**: Add `--apply` to actually write changes
+2. **Always use `--output json`**: For structured, parseable output (most commands default to `text`)
+3. **Assets must be registered before mappings**: Run `asset add` before `mapping add`
+4. **Scan requires a Git repository**: Ensure running inside a Git repo
+5. **Dual config files**: `kamap.yaml` (shared/team, commit to Git) and `.kamap.yaml` (personal, gitignored). Default writes to `.kamap.yaml`; use `--shared` flag to write to `kamap.yaml`
+6. **Config file lookup**: kamap searches upward from current directory for `kamap.yaml` or `.kamap.yaml`
+
+## Core Capabilities
+
+### 1. Impact Analysis (scan / check)
+
+Automatically identify affected knowledge assets when code changes:
+
+```bash
+# Scan Git changes for impact on knowledge assets (default: origin/main..HEAD)
+{SKILL_DIR}/bin/kamap scan --output json
+
+# Scan with custom Git refs
+{SKILL_DIR}/bin/kamap scan --base origin/develop --head feature-branch --output json
+
+# CI mode check (non-zero exit code when error-level impacts exist)
+{SKILL_DIR}/bin/kamap check --base origin/main --head HEAD --output json
+```
+
+**Typical scenario**: After modifying code, run scan to see which documents need synchronization. The output includes `action` field per impact: `update`, `review`, `verify`, or `acknowledge`.
+
+### 2. Mapping Management (mapping)
+
+Establish and manage associations between code and knowledge assets. All mapping subcommands support `--shared` (global flag) to write to team config.
+
+```bash
+# Add a single mapping (dry-run by default, use --apply to write)
+{SKILL_DIR}/bin/kamap mapping add \
+  --source 'src/auth/**/*.ts' \
+  --asset auth-doc \
+  --reason '认证模块实现' \
+  --action review \
+  --apply --output json
+
+# Add with line range and write to shared config
+{SKILL_DIR}/bin/kamap mapping add \
+  --source src/auth/login.ts \
+  --asset auth-doc \
+  --lines '10-45' \
+  --reason 'Login flow' \
+  --action update \
+  --shared --apply --output json
+
+# Batch add mappings from JSON (via stdin or --file)
+echo '{"mappings":[
+  {"source_path":"src/foo.rs","asset_id":"my-doc","reason":"实现代码"},
+  {"source_path":"src/bar.rs","asset_id":"my-doc","reason":"辅助模块","action":"review","source_lines":[10,45]}
+]}' | {SKILL_DIR}/bin/kamap mapping add-batch --stdin --apply --output json
+
+# Batch add from file
+{SKILL_DIR}/bin/kamap mapping add-batch --file mappings.json --apply --output json
+
+# List all mappings
+{SKILL_DIR}/bin/kamap mapping list --output json
+
+# Filter mappings by asset
+{SKILL_DIR}/bin/kamap mapping list --asset my-doc --output json
+
+# Remove a mapping by ID
+{SKILL_DIR}/bin/kamap mapping remove --id map_abc123 --output json
+
+# Validate all mappings
+{SKILL_DIR}/bin/kamap mapping validate --output json
+
+# Export mappings (uses --format, not --output; supports json, yaml, csv)
+{SKILL_DIR}/bin/kamap mapping export --format json
+
+# Import mappings (strategy: append (default), merge, replace)
+{SKILL_DIR}/bin/kamap mapping import --file mappings.json --format json --strategy merge --apply
+{SKILL_DIR}/bin/kamap mapping import --stdin --format yaml --apply
+
+# Auto-discover mapping candidates (from @kamap annotations, frontmatter, naming conventions)
+{SKILL_DIR}/bin/kamap mapping discover --output json
+{SKILL_DIR}/bin/kamap mapping discover --include-low-confidence --output json
+
+# Export project context for AI analysis (default output: json)
+{SKILL_DIR}/bin/kamap mapping export-context --output json
+```
+
+**Batch JSON format** — the `mappings` array accepts objects with:
+- `source_path` (required): Source file path or glob
+- `asset_id` (required): Target asset ID
+- `reason` (optional): Why this mapping exists
+- `action` (optional): `"review"`, `"update"`, `"verify"`, `"acknowledge"`
+- `source_lines` (optional): `[start, end]` line range array
+- `segment` (optional): JSON object for targeting specific asset sections
+
+### 3. Asset Management (asset)
+
+Register and manage knowledge assets. All asset subcommands support `--shared` (global flag).
+
+```bash
+# Register a new asset (dry-run by default, use --apply to write)
+{SKILL_DIR}/bin/kamap asset add \
+  --id my-doc \
+  --provider localfs \
+  --type markdown \
+  --target docs/my-doc.md \
+  --apply --output json
+
+# List all assets
+{SKILL_DIR}/bin/kamap asset list --output json
+
+# Remove an asset
+{SKILL_DIR}/bin/kamap asset remove --id my-doc --output json
+
+# Health check all assets
+{SKILL_DIR}/bin/kamap asset check --output json
+```
+
+**Built-in providers**: `localfs` (types: `markdown`, `text`, `config`) and `sqlite` (type: `sqlite-db`).
+
+### 4. Index Management (index)
+
+Build and manage runtime indexes (stored at `.kamap/index.db`):
+
+```bash
+# Build/rebuild index
+{SKILL_DIR}/bin/kamap index build --output json
+
+# View index statistics
+{SKILL_DIR}/bin/kamap index stats --output json
+```
+
+### 5. Project Initialization (init)
+
+```bash
+{SKILL_DIR}/bin/kamap init --output json
+```
+
+Creates `kamap.yaml` (shared) + `.kamap.yaml` (personal) + `.kamap/` working directory.
+
+### 6. Relationship Explanation (explain)
+
+Explain relationships for a mapping, asset, or source file (must specify exactly one):
+
+```bash
+{SKILL_DIR}/bin/kamap explain --mapping map_abc123 --output json
+{SKILL_DIR}/bin/kamap explain --asset my-doc --output json
+{SKILL_DIR}/bin/kamap explain --source src/auth/mod.rs --output json
+```
+
+### 7. Tool Self-Description (describe)
+
+Output machine-readable tool description (default output: json):
+
+```bash
+{SKILL_DIR}/bin/kamap describe --output json
+```
+
+### 8. Plugin Management (plugin)
+
+```bash
+{SKILL_DIR}/bin/kamap plugin list --output json
+{SKILL_DIR}/bin/kamap plugin info --name localfs --output json
+```
+
+## Recommended Workflows
+
+### Workflow A: Post-Coding Document Sync
+
+1. After code changes, run `{SKILL_DIR}/bin/kamap scan --output json`
+2. Based on the `action` field in scan results:
+   - `update`: Directly update the corresponding document
+   - `review`: Review whether the document needs updating
+   - `verify`: Verify document-code consistency
+3. After updating documents, scan again to confirm nothing was missed
+
+### Workflow B: Project Initialization
+
+1. `{SKILL_DIR}/bin/kamap init --output json` to initialize the project
+2. Register all knowledge assets:
+   ```bash
+   {SKILL_DIR}/bin/kamap asset add --id <id> --provider localfs --type markdown --target <path> --apply --output json
+   ```
+3. `{SKILL_DIR}/bin/kamap mapping export-context --output json` to export project context
+4. Analyze code-document relationships, then batch write mappings:
+   ```bash
+   echo '{"mappings":[...]}' | {SKILL_DIR}/bin/kamap mapping add-batch --stdin --apply --output json
+   ```
+5. `{SKILL_DIR}/bin/kamap mapping validate --output json` to verify mapping integrity
+6. `{SKILL_DIR}/bin/kamap mapping discover --output json` to find more mapping candidates
+
+### Workflow C: AI-Assisted Mapping Generation
+
+1. `{SKILL_DIR}/bin/kamap mapping export-context --output json` to get project context
+2. Analyze the context: code files, existing assets, existing mappings, unmapped code files, unmapped assets
+3. Generate mapping suggestions as batch JSON
+4. `echo '{"mappings":[...]}' | {SKILL_DIR}/bin/kamap mapping add-batch --stdin --apply --output json` to batch write
+5. `{SKILL_DIR}/bin/kamap mapping validate --output json` to validate
+
+For detailed information on auto-discovery strategies (@kamap annotations, frontmatter, naming conventions) and complete command parameter reference, see `{SKILL_DIR}/references/detailed-guide.md`.

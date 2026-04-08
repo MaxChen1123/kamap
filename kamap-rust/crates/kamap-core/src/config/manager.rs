@@ -95,9 +95,9 @@ pub struct NamingHint {
 /// - `.kamap.yaml` — 开发者个人配置，不提交到 Git
 ///
 /// 加载时两个文件会合并，`.kamap.yaml` 中的内容追加到 `kamap.yaml` 之后（个人覆盖共享）。
-/// 写入操作默认写入 `kamap.yaml`（共享），可通过 `local` 标志写入 `.kamap.yaml`（个人）。
+/// 写入操作默认写入 `.kamap.yaml`（个人），可通过 `--shared` 标志写入 `kamap.yaml`（共享）。
 pub struct ConfigManager {
-    /// 主配置文件路径（用于写入的默认目标）
+    /// 主配置文件路径（用于写入的默认目标，优先 .kamap.yaml）
     path: PathBuf,
     /// 共享配置文件路径 (kamap.yaml)，如果存在
     shared_path: Option<PathBuf>,
@@ -169,10 +169,10 @@ impl ConfigManager {
         // 合并配置
         let merged = Self::merge_configs(shared_config.as_ref(), local_config.as_ref());
 
-        // 默认写入目标：优先共享配置路径
-        let write_path = shared_path
+        // 默认写入目标：优先个人配置路径 (.kamap.yaml)
+        let write_path = local_path
             .map(|p| p.to_path_buf())
-            .or_else(|| local_path.map(|p| p.to_path_buf()))
+            .or_else(|| shared_path.map(|p| p.to_path_buf()))
             .unwrap();
 
         Ok(Self {
@@ -242,7 +242,7 @@ impl ConfigManager {
         }
     }
 
-    /// 保存配置到文件（默认写入共享配置）
+    /// 保存配置到文件（默认写入个人配置 .kamap.yaml）
     pub fn save(&self) -> Result<()> {
         let content = serde_yaml::to_string(&self.config)
             .with_context(|| "Failed to serialize config")?;
@@ -251,17 +251,20 @@ impl ConfigManager {
         Ok(())
     }
 
-    /// 保存到指定的配置文件（共享或个人）
-    pub fn save_to(&self, local: bool) -> Result<()> {
-        let target = if local {
-            self.local_path.as_ref().ok_or_else(|| anyhow::anyhow!("No local config path (.kamap.yaml) set"))?
+    /// 保存到指定的配置文件
+    ///
+    /// - `shared = false`（默认）：写入 `.kamap.yaml`（个人配置）
+    /// - `shared = true`：写入 `kamap.yaml`（团队共享配置）
+    pub fn save_to(&self, shared: bool) -> Result<()> {
+        let target = if shared {
+            self.shared_path.as_ref().ok_or_else(|| anyhow::anyhow!("No shared config path (kamap.yaml) set"))?
         } else {
-            self.shared_path.as_ref().unwrap_or(&self.path)
+            self.local_path.as_ref().unwrap_or(&self.path)
         };
-        let config_to_save = if local {
-            self.local_config.as_ref().unwrap_or(&self.config)
-        } else {
+        let config_to_save = if shared {
             self.shared_config.as_ref().unwrap_or(&self.config)
+        } else {
+            self.local_config.as_ref().unwrap_or(&self.config)
         };
         let content = serde_yaml::to_string(config_to_save)
             .with_context(|| "Failed to serialize config")?;

@@ -17,6 +17,10 @@ pub struct MappingArgs {
     /// Path to config file
     #[arg(long, global = true)]
     pub config: Option<String>,
+
+    /// Write to kamap.yaml (shared/team config) instead of .kamap.yaml (personal)
+    #[arg(long, global = true)]
+    pub shared: bool,
 }
 
 #[derive(Subcommand)]
@@ -171,20 +175,21 @@ pub struct ExportContextArgs {
 }
 
 pub fn run(args: MappingArgs) -> Result<()> {
+    let shared = args.shared;
     match args.command {
-        MappingCommands::Add(a) => run_add(a, args.config.as_deref()),
-        MappingCommands::AddBatch(a) => run_add_batch(a, args.config.as_deref()),
-        MappingCommands::Remove(a) => run_remove(a, args.config.as_deref()),
+        MappingCommands::Add(a) => run_add(a, args.config.as_deref(), shared),
+        MappingCommands::AddBatch(a) => run_add_batch(a, args.config.as_deref(), shared),
+        MappingCommands::Remove(a) => run_remove(a, args.config.as_deref(), shared),
         MappingCommands::List(a) => run_list(a, args.config.as_deref()),
         MappingCommands::Validate(a) => run_validate(a, args.config.as_deref()),
         MappingCommands::Discover(a) => run_discover(a, args.config.as_deref()),
         MappingCommands::Export(a) => run_export(a, args.config.as_deref()),
-        MappingCommands::Import(a) => run_import(a, args.config.as_deref()),
+        MappingCommands::Import(a) => run_import(a, args.config.as_deref(), shared),
         MappingCommands::ExportContext(a) => run_export_context(a, args.config.as_deref()),
     }
 }
 
-fn run_add(args: AddArgs, config_path: Option<&str>) -> Result<()> {
+fn run_add(args: AddArgs, config_path: Option<&str>, shared: bool) -> Result<()> {
     let mut cm = load_config(config_path)?;
 
     let lines = args.lines.as_ref().and_then(|l| {
@@ -250,7 +255,7 @@ fn run_add(args: AddArgs, config_path: Option<&str>) -> Result<()> {
     }
 
     let id = cm.add_mapping(mapping)?;
-    cm.save()?;
+    cm.save_to(shared)?;
 
     if args.output == "json" {
         println!("{}", serde_json::json!({"status": "added", "id": id}));
@@ -261,7 +266,7 @@ fn run_add(args: AddArgs, config_path: Option<&str>) -> Result<()> {
     Ok(())
 }
 
-fn run_add_batch(args: AddBatchArgs, config_path: Option<&str>) -> Result<()> {
+fn run_add_batch(args: AddBatchArgs, config_path: Option<&str>, shared: bool) -> Result<()> {
     let mut cm = load_config(config_path)?;
 
     let input = if args.stdin {
@@ -349,7 +354,7 @@ fn run_add_batch(args: AddBatchArgs, config_path: Option<&str>) -> Result<()> {
     }
 
     let result = cm.add_mappings_batch(mappings)?;
-    cm.save()?;
+    cm.save_to(shared)?;
 
     println!(
         "{}",
@@ -364,10 +369,10 @@ fn run_add_batch(args: AddBatchArgs, config_path: Option<&str>) -> Result<()> {
     Ok(())
 }
 
-fn run_remove(args: RemoveArgs, config_path: Option<&str>) -> Result<()> {
+fn run_remove(args: RemoveArgs, config_path: Option<&str>, shared: bool) -> Result<()> {
     let mut cm = load_config(config_path)?;
     let removed = cm.remove_mapping(&args.id)?;
-    cm.save()?;
+    cm.save_to(shared)?;
 
     if args.output == "json" {
         println!(
@@ -500,7 +505,7 @@ fn run_export(args: ExportArgs, config_path: Option<&str>) -> Result<()> {
     Ok(())
 }
 
-fn run_import(args: ImportArgs, config_path: Option<&str>) -> Result<()> {
+fn run_import(args: ImportArgs, config_path: Option<&str>, shared: bool) -> Result<()> {
     let mut cm = load_config(config_path)?;
 
     let input = if args.stdin {
@@ -536,7 +541,7 @@ fn run_import(args: ImportArgs, config_path: Option<&str>) -> Result<()> {
     }
 
     let result = cm.import_mappings(&input, &format, strategy)?;
-    cm.save()?;
+    cm.save_to(shared)?;
 
     println!(
         "{}",

@@ -22,6 +22,10 @@ impl DiffAnalyzer {
             .revparse_single(head)
             .with_context(|| format!("Failed to resolve ref '{}'", head))?;
 
+        // 获取实际的 commit hash
+        let base_commit_hash = base_obj.id().to_string();
+        let head_commit_hash = head_obj.id().to_string();
+
         let base_tree = base_obj
             .peel_to_tree()
             .with_context(|| format!("Failed to peel '{}' to tree", base))?;
@@ -36,7 +40,34 @@ impl DiffAnalyzer {
             .diff_tree_to_tree(Some(&base_tree), Some(&head_tree), Some(&mut opts))
             .with_context(|| "Failed to compute diff")?;
 
-        parse_diff(&diff)
+        let mut result = parse_diff(&diff)?;
+        result.base_ref = base_commit_hash;
+        result.head_ref = head_commit_hash;
+        Ok(result)
+    }
+
+    /// 获取 base..workdir 的完整变更文件路径集合
+    ///
+    /// 合并两段 diff：base..HEAD（已提交）+ HEAD..workdir（未提交）
+    /// 返回所有变更文件的路径集合，用于检测资产文件是否被修改。
+    pub fn changed_files_full(repo_path: &Path, base: &str) -> Result<std::collections::HashSet<String>> {
+        let mut all_paths = std::collections::HashSet::new();
+
+        // 1. base..HEAD 的已提交变更
+        if let Ok(committed) = Self::analyze(repo_path, base, "HEAD") {
+            for change in &committed.changes {
+                all_paths.insert(change.path.clone());
+            }
+        }
+
+        // 2. HEAD..workdir 的未提交变更（staged + unstaged）
+        if let Ok(workdir) = Self::analyze_workdir(repo_path) {
+            for change in &workdir.changes {
+                all_paths.insert(change.path.clone());
+            }
+        }
+
+        Ok(all_paths)
     }
 
     /// 分析工作区未提交的变更（与 HEAD 比较）
