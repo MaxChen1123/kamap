@@ -10,12 +10,12 @@ use super::{load_config, workspace_root};
 
 #[derive(Args)]
 pub struct CheckArgs {
-    /// Base Git ref
-    #[arg(long, default_value = "origin/main")]
+    /// Base Git ref (default: HEAD, i.e. latest commit)
+    #[arg(long, default_value = "HEAD")]
     pub base: String,
 
-    /// Head Git ref
-    #[arg(long, default_value = "HEAD")]
+    /// Head Git ref or "workdir" for uncommitted changes (default: workdir)
+    #[arg(long, default_value = "workdir")]
     pub head: String,
 
     /// Output format: text, json

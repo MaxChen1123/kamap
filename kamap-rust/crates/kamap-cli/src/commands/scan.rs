@@ -15,12 +15,12 @@ pub struct ScanArgs {
     #[command(subcommand)]
     pub command: Option<ScanCommands>,
 
-    /// Base Git ref (default: origin/main)
-    #[arg(long, default_value = "origin/main")]
+    /// Base Git ref (default: HEAD, i.e. latest commit)
+    #[arg(long, default_value = "HEAD")]
     pub base: String,
 
-    /// Head Git ref (default: HEAD)
-    #[arg(long, default_value = "HEAD")]
+    /// Head Git ref or "workdir" for uncommitted changes (default: workdir)
+    #[arg(long, default_value = "workdir")]
     pub head: String,
 
     /// Output format: text, json

@@ -11,7 +11,13 @@ pub struct DiffAnalyzer;
 
 impl DiffAnalyzer {
     /// 分析两个 Git ref 之间的变更
+    ///
+    /// 当 `head` 为 `"workdir"` 时，自动对比 base 与工作区（含 staged + unstaged）。
     pub fn analyze(repo_path: &Path, base: &str, head: &str) -> Result<DiffResult> {
+        if head == "workdir" {
+            return Self::analyze_base_to_workdir(repo_path, base);
+        }
+
         let repo = Repository::open(repo_path)
             .with_context(|| format!("Failed to open git repo at {}", repo_path.display()))?;
 
@@ -39,6 +45,39 @@ impl DiffAnalyzer {
         let diff = repo
             .diff_tree_to_tree(Some(&base_tree), Some(&head_tree), Some(&mut opts))
             .with_context(|| "Failed to compute diff")?;
+
+        let mut result = parse_diff(&diff)?;
+        result.base_ref = base_commit_hash;
+        result.head_ref = head_commit_hash;
+        Ok(result)
+    }
+
+    /// 分析指定 base ref 到工作区的变更（含 staged + unstaged）
+    fn analyze_base_to_workdir(repo_path: &Path, base: &str) -> Result<DiffResult> {
+        let repo = Repository::open(repo_path)
+            .with_context(|| format!("Failed to open git repo at {}", repo_path.display()))?;
+
+        let base_obj = repo
+            .revparse_single(base)
+            .with_context(|| format!("Failed to resolve ref '{}'", base))?;
+        let base_commit_hash = base_obj.id().to_string();
+
+        // 用当前 HEAD commit hash 作为 head_ref，确保 ack 能正确关联到 commit
+        let head_commit_hash = repo
+            .head()
+            .and_then(|h| h.peel_to_commit().map(|c| c.id().to_string()))
+            .unwrap_or_else(|_| "workdir".to_string());
+
+        let base_tree = base_obj
+            .peel_to_tree()
+            .with_context(|| format!("Failed to peel '{}' to tree", base))?;
+
+        let mut opts = DiffOptions::new();
+        opts.context_lines(0);
+
+        let diff = repo
+            .diff_tree_to_workdir_with_index(Some(&base_tree), Some(&mut opts))
+            .with_context(|| "Failed to compute workdir diff")?;
 
         let mut result = parse_diff(&diff)?;
         result.base_ref = base_commit_hash;
@@ -76,6 +115,10 @@ impl DiffAnalyzer {
             .with_context(|| format!("Failed to open git repo at {}", repo_path.display()))?;
 
         let head = repo.head().with_context(|| "Failed to get HEAD")?;
+        let head_commit_hash = head
+            .peel_to_commit()
+            .map(|c| c.id().to_string())
+            .unwrap_or_else(|_| "HEAD".to_string());
         let head_tree = head
             .peel_to_tree()
             .with_context(|| "Failed to peel HEAD to tree")?;
@@ -88,8 +131,8 @@ impl DiffAnalyzer {
             .with_context(|| "Failed to compute workdir diff")?;
 
         let mut result = parse_diff(&diff)?;
-        result.base_ref = "HEAD".to_string();
-        result.head_ref = "workdir".to_string();
+        result.base_ref = head_commit_hash.clone();
+        result.head_ref = head_commit_hash;
         Ok(result)
     }
 }
