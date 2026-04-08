@@ -194,7 +194,15 @@ Output machine-readable tool description (default output: json):
    - `update`: Directly update the corresponding document
    - `review`: Review whether the document needs updating
    - `verify`: Verify document-code consistency
-3. After updating documents, scan again to confirm nothing was missed
+   - `acknowledge`: Note the change but no document update needed
+3. After handling each impact, acknowledge it:
+   ```bash
+   # Acknowledge specific impacts by mapping ID
+   {SKILL_DIR}/bin/kamap scan ack --ids map_abc123,map_def456 --output json
+   # Or acknowledge all at once
+   {SKILL_DIR}/bin/kamap scan ack --all --output json
+   ```
+4. After updating documents, scan again to confirm nothing was missed
 
 ### Workflow B: Project Initialization
 
