@@ -726,7 +726,7 @@ fn collect_code_files(dir: &Path, base: &Path, out: &mut Vec<CodeFileInfo>) -> R
             let rel = path.strip_prefix(base).unwrap_or(&path);
             let size = std::fs::metadata(&path).map(|m| m.len()).unwrap_or(0);
             out.push(CodeFileInfo {
-                path: rel.to_string_lossy().to_string(),
+                path: crate::path_util::to_forward_slash(rel),
                 file_type: file_type.to_string(),
                 size,
             });

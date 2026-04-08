@@ -95,11 +95,9 @@ fn scan_dir_for_annotations(
         if path.is_dir() {
             scan_dir_for_annotations(scanner, &path, workspace, candidates)?;
         } else if is_code_file(&path) {
-            let rel_path = path
-                .strip_prefix(workspace)
-                .unwrap_or(&path)
-                .to_string_lossy()
-                .to_string();
+            let rel_path = crate::path_util::to_forward_slash(
+                path.strip_prefix(workspace).unwrap_or(&path),
+            );
             if let Ok(mut file_candidates) = scanner.scan_file(&path, &rel_path) {
                 candidates.append(&mut file_candidates);
             }

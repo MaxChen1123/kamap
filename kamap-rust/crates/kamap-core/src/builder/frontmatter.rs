@@ -97,11 +97,9 @@ fn scan_markdown_files(
         if path.is_dir() {
             scan_markdown_files(parser, &path, workspace, candidates)?;
         } else if path.extension().and_then(|e| e.to_str()) == Some("md") {
-            let rel_path = path
-                .strip_prefix(workspace)
-                .unwrap_or(&path)
-                .to_string_lossy()
-                .to_string();
+            let rel_path = crate::path_util::to_forward_slash(
+                path.strip_prefix(workspace).unwrap_or(&path),
+            );
             if let Ok(mut file_candidates) = parser.parse_file(&path, &rel_path) {
                 candidates.append(&mut file_candidates);
             }
