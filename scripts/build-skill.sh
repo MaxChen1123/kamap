@@ -105,8 +105,22 @@ mkdir -p "$BIN_DIR"
 cp "$SOURCE_BINARY" "$BIN_DIR/$BINARY_NAME"
 chmod +x "$BIN_DIR/$BINARY_NAME"
 
-# 5. Print results
+# 5. 清理 kamap-skill 目录内残留的旧 zip（防止 zip 套 zip）
+rm -f "$SKILL_DIR"/*.zip
+
+# 6. 打包 zip 到项目根目录
+ZIP_NAME="kamap-skill.zip"
+ZIP_PATH="$PROJECT_ROOT/$ZIP_NAME"
+rm -f "$ZIP_PATH"
+
+echo ""
+echo "📦 Step 3: Creating $ZIP_NAME..."
+
+(cd "$PROJECT_ROOT" && zip -r "$ZIP_PATH" kamap-skill/ -x "kamap-skill/.DS_Store" "kamap-skill/**/.DS_Store")
+
+# 7. Print results
 BINARY_SIZE=$(du -h "$BIN_DIR/$BINARY_NAME" | cut -f1)
+ZIP_SIZE=$(du -h "$ZIP_PATH" | cut -f1)
 echo ""
 echo "=========================================="
 echo "  ✅ Packaging complete!"
@@ -114,6 +128,9 @@ echo "=========================================="
 echo ""
 echo "  Binary: kamap-skill/bin/$BINARY_NAME"
 echo "  Size:   $BINARY_SIZE"
+echo ""
+echo "  ZIP:    $ZIP_NAME"
+echo "  Size:   $ZIP_SIZE"
 echo ""
 echo "  Verify: $BIN_DIR/$BINARY_NAME --version"
 "$BIN_DIR/$BINARY_NAME" --version 2>/dev/null || echo "  (binary built successfully)"

@@ -35,6 +35,7 @@ Activate this skill when the user's request involves any of the following:
 6. **Config file lookup**: kamap searches upward from current directory for `kamap.yaml` or `.kamap.yaml`
 7. **CRITICAL — Personal config by default**: All `asset add`, `mapping add`, `mapping add-batch` commands write to the **personal** config (`.kamap.yaml`) by default. You MUST **NOT** use `--shared` unless the user **explicitly** states the asset/mapping should be shared or team-level. When in doubt, always default to personal config.
 8. **CRITICAL — Check existing assets before adding**: Before running `asset add`, you MUST first run `asset list --output json` to inspect all currently registered assets. This prevents duplicate registrations and helps you reference existing asset IDs when adding mappings.
+9. **CRITICAL — No `asset-type` or `type` subcommand**: There is NO subcommand called `asset-type` or `asset type` or `type`. The asset type (e.g. `markdown`, `text`, `config`, `sqlite-db`) is specified via the `--type` **flag** on the `asset add` subcommand. The correct usage is: `kamap asset add --id <id> --provider <provider> --type <type> --target <path>`. Do NOT confuse `--type` (a flag) with a subcommand.
 
 ## Core Capabilities
 

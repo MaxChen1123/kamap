@@ -93,7 +93,22 @@ if (-not (Test-Path $BinDir)) {
 
 Copy-Item $SourceBinary (Join-Path $BinDir $BinaryName) -Force
 
-# 5. 输出结果
+# 5. 清理 kamap-skill 目录内残留的旧 zip（防止 zip 套 zip）
+Get-ChildItem -Path $SkillDir -Filter "*.zip" -ErrorAction SilentlyContinue | Remove-Item -Force
+
+# 6. 打包 zip 到项目根目录
+$ZipName = "kamap-skill.zip"
+$ZipPath = Join-Path $ProjectRoot $ZipName
+if (Test-Path $ZipPath) {
+    Remove-Item $ZipPath -Force
+}
+
+Write-Host ""
+Write-Host "📦 Step 3: Creating $ZipName..."
+
+Compress-Archive -Path $SkillDir -DestinationPath $ZipPath -Force
+
+# 7. 输出结果
 $BinaryPath = Join-Path $BinDir $BinaryName
 $BinarySize = (Get-Item $BinaryPath).Length
 $SizeDisplay = if ($BinarySize -ge 1MB) {
@@ -104,6 +119,15 @@ $SizeDisplay = if ($BinarySize -ge 1MB) {
     "$BinarySize B"
 }
 
+$ZipSize = (Get-Item $ZipPath).Length
+$ZipSizeDisplay = if ($ZipSize -ge 1MB) {
+    "{0:N1} MB" -f ($ZipSize / 1MB)
+} elseif ($ZipSize -ge 1KB) {
+    "{0:N1} KB" -f ($ZipSize / 1KB)
+} else {
+    "$ZipSize B"
+}
+
 Write-Host ""
 Write-Host "=========================================="
 Write-Host "  ✅ 打包完成!"
@@ -111,6 +135,9 @@ Write-Host "=========================================="
 Write-Host ""
 Write-Host "  Binary: kamap-skill\bin\$BinaryName"
 Write-Host "  Size:   $SizeDisplay"
+Write-Host ""
+Write-Host "  ZIP:    $ZipName"
+Write-Host "  Size:   $ZipSizeDisplay"
 Write-Host ""
 Write-Host "  验证: $BinaryPath --version"
 try {

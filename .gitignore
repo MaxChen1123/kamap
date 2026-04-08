@@ -4,4 +4,4 @@ kamap-rust/target/
 .kamap.yaml
 .kamap/
 kamap-skill/bin/
-kamap-skill/kamap-skill.zip
+kamap-skill.zip
