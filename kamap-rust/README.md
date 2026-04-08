@@ -213,14 +213,17 @@ kamap mapping list -o json          # JSON 输出
 kamap mapping validate
 ```
 
-#### `kamap mapping discover`
+#### ~~`kamap mapping discover`~~ （暂时关闭）
 
-自动发现映射候选。支持三种策略（详见下文"映射发现"章节）。
+> **注意**：`mapping discover` 子命令目前已暂时关闭，CLI 入口不可用。底层发现策略（Annotation、Frontmatter、Naming Convention）的实现代码仍保留，后续需要时可重新启用。
+
+~~自动发现映射候选。支持三种策略（详见下文"映射发现"章节）。~~
 
 ```bash
-kamap mapping discover
-kamap mapping discover --include-low-confidence   # 包含低置信度候选
-kamap mapping discover -o json
+# 以下命令当前不可用
+# kamap mapping discover
+# kamap mapping discover --include-low-confidence
+# kamap mapping discover -o json
 ```
 
 #### `kamap mapping export`

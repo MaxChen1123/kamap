@@ -84,10 +84,6 @@ pub fn run(args: DescribeArgs) -> Result<()> {
                 "description": "Validate all mappings"
             },
             {
-                "name": "mapping discover",
-                "description": "Auto-discover mapping candidates from annotations, frontmatter, naming conventions"
-            },
-            {
                 "name": "mapping export-context",
                 "description": "Export project context for AI analysis"
             },

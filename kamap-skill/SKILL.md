@@ -248,4 +248,4 @@ Output machine-readable tool description (default output: json):
 4. `echo '{"mappings":[...]}' | {SKILL_DIR}/bin/kamap mapping add-batch --stdin --apply --output json` to batch write
 5. `{SKILL_DIR}/bin/kamap mapping validate --output json` to validate
 
-For detailed information on auto-discovery strategies (@kamap annotations, frontmatter, naming conventions) and complete command parameter reference, see `{SKILL_DIR}/references/detailed-guide.md`.
+For detailed information on auto-discovery strategies (@kamap annotations, frontmatter, naming conventions) and complete command parameter reference, see `{SKILL_DIR}/references/detailed-guide.md`. Note: the `mapping discover` CLI command is **temporarily disabled**.

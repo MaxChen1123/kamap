@@ -26,7 +26,7 @@ enum Commands {
     /// Output tool self-description for Agent consumption
     Describe(commands::describe::DescribeArgs),
 
-    /// Mapping management (add, remove, list, validate, discover, export, import)
+    /// Mapping management (add, remove, list, validate, export, import)
     Mapping(commands::mapping::MappingArgs),
 
     /// Asset management (add, remove, list, check)

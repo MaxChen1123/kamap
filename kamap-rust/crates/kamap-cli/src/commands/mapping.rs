@@ -3,7 +3,6 @@ use std::io::Read;
 use anyhow::Result;
 use clap::{Args, Subcommand};
 
-use kamap_core::builder::DiscoveryOptions;
 use kamap_core::config::{ContextOptions, Format};
 use kamap_core::models::{Action, MappingDef, MappingFilter, MappingMeta, SourceLocator};
 
@@ -35,8 +34,9 @@ pub enum MappingCommands {
     List(ListArgs),
     /// Validate all mappings
     Validate(ValidateArgs),
-    /// Auto-discover mapping candidates
-    Discover(DiscoverArgs),
+    // NOTE: discover 功能暂时关闭，实现代码保留在 run_discover 中
+    // /// Auto-discover mapping candidates
+    // Discover(DiscoverArgs),
     /// Export mappings
     Export(ExportArgs),
     /// Import mappings
@@ -123,17 +123,17 @@ pub struct ValidateArgs {
     pub output: String,
 }
 
-// === Discover ===
+// === Discover (暂时关闭) ===
 
-#[derive(Args)]
-pub struct DiscoverArgs {
-    /// Include low confidence candidates
-    #[arg(long)]
-    pub include_low_confidence: bool,
-    /// Output format
-    #[arg(long, short, default_value = "text")]
-    pub output: String,
-}
+// #[derive(Args)]
+// pub struct DiscoverArgs {
+//     /// Include low confidence candidates
+//     #[arg(long)]
+//     pub include_low_confidence: bool,
+//     /// Output format
+//     #[arg(long, short, default_value = "text")]
+//     pub output: String,
+// }
 
 // === Export ===
 
@@ -182,7 +182,7 @@ pub fn run(args: MappingArgs) -> Result<()> {
         MappingCommands::Remove(a) => run_remove(a, args.config.as_deref(), shared),
         MappingCommands::List(a) => run_list(a, args.config.as_deref()),
         MappingCommands::Validate(a) => run_validate(a, args.config.as_deref()),
-        MappingCommands::Discover(a) => run_discover(a, args.config.as_deref()),
+        // MappingCommands::Discover(a) => run_discover(a, args.config.as_deref()),
         MappingCommands::Export(a) => run_export(a, args.config.as_deref()),
         MappingCommands::Import(a) => run_import(a, args.config.as_deref(), shared),
         MappingCommands::ExportContext(a) => run_export_context(a, args.config.as_deref()),
@@ -455,43 +455,44 @@ fn run_validate(args: ValidateArgs, config_path: Option<&str>) -> Result<()> {
     Ok(())
 }
 
-fn run_discover(args: DiscoverArgs, config_path: Option<&str>) -> Result<()> {
-    let cm = load_config(config_path)?;
-    let workspace = workspace_root(cm.path());
-    let opts = DiscoveryOptions {
-        include_low_confidence: args.include_low_confidence,
-    };
-
-    let candidates = kamap_core::builder::run_discovery(&workspace, cm.config(), &opts)?;
-
-    if args.output == "json" {
-        println!("{}", serde_json::to_string_pretty(&candidates)?);
-    } else {
-        if candidates.is_empty() {
-            println!("No mapping candidates discovered.");
-            return Ok(());
-        }
-        println!("Discovered {} mapping candidates:\n", candidates.len());
-        for c in &candidates {
-            let lines_str = c
-                .source
-                .lines
-                .map(|l| format!(":{}-{}", l[0], l[1]))
-                .unwrap_or_default();
-            println!(
-                "  [{:.0}%] {}{} → {} ({:?})",
-                c.confidence * 100.0,
-                c.source.path,
-                lines_str,
-                c.asset_id,
-                c.origin
-            );
-            println!("    reason: {}", c.reason);
-        }
-    }
-
-    Ok(())
-}
+// NOTE: discover 功能暂时关闭，保留实现代码供后续启用
+// fn run_discover(args: DiscoverArgs, config_path: Option<&str>) -> Result<()> {
+//     let cm = load_config(config_path)?;
+//     let workspace = workspace_root(cm.path());
+//     let opts = kamap_core::builder::DiscoveryOptions {
+//         include_low_confidence: args.include_low_confidence,
+//     };
+//
+//     let candidates = kamap_core::builder::run_discovery(&workspace, cm.config(), &opts)?;
+//
+//     if args.output == "json" {
+//         println!("{}", serde_json::to_string_pretty(&candidates)?);
+//     } else {
+//         if candidates.is_empty() {
+//             println!("No mapping candidates discovered.");
+//             return Ok(());
+//         }
+//         println!("Discovered {} mapping candidates:\n", candidates.len());
+//         for c in &candidates {
+//             let lines_str = c
+//                 .source
+//                 .lines
+//                 .map(|l| format!(":{}-{}", l[0], l[1]))
+//                 .unwrap_or_default();
+//             println!(
+//                 "  [{:.0}%] {}{} → {} ({:?})",
+//                 c.confidence * 100.0,
+//                 c.source.path,
+//                 lines_str,
+//                 c.asset_id,
+//                 c.origin
+//             );
+//             println!("    reason: {}", c.reason);
+//         }
+//     }
+//
+//     Ok(())
+// }
 
 fn run_export(args: ExportArgs, config_path: Option<&str>) -> Result<()> {
     let cm = load_config(config_path)?;

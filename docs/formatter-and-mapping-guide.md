@@ -334,7 +334,7 @@ assets:
     type: markdown
     target: docs/api.md
 
-mappings: []  # 通过 discover 自动填充
+mappings: []  # 手动添加或通过 AI 辅助批量导入
 
 discovery:
   annotation:

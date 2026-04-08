@@ -110,7 +110,9 @@ Fields: `source_path` (required), `asset_id` (required), `reason` (optional), `a
 |-----------|------|----------|---------|-------------|
 | `--output` / `-o` | string | No | `"text"` | Output format |
 
-#### mapping discover
+#### mapping discover (temporarily disabled)
+
+> **Note**: This subcommand is currently disabled. The parameters below are for reference only.
 
 | Parameter | Type | Required | Default | Description |
 |-----------|------|----------|---------|-------------|
@@ -230,7 +232,9 @@ kamap uses two configuration files:
 
 ---
 
-## Mapping Auto-Discovery Strategies
+## Mapping Auto-Discovery Strategies (CLI temporarily disabled)
+
+> **Note**: The `mapping discover` CLI command is temporarily disabled. The discovery strategies described below are still implemented in `kamap-core` and can be re-enabled in the future.
 
 ### @kamap Code Annotations (Confidence: 0.9)
 
