@@ -9,7 +9,11 @@ description: This skill should be used when users need to manage knowledge asset
 
 kamap is a Git-based knowledge asset mapping and impact analysis framework. It establishes mapping relationships between code and knowledge assets (documents, databases, configurations), automatically locates affected assets when code changes, and reminds developers to synchronize updates.
 
-The kamap binary is located at `{SKILL_DIR}/bin/kamap`.
+The kamap binary is located at:
+- **macOS / Linux**: `{SKILL_DIR}/bin/kamap`
+- **Windows**: `{SKILL_DIR}/bin/kamap.exe`
+
+**IMPORTANT**: When constructing commands, you MUST detect the current operating system and use the correct binary path. Use `{SKILL_DIR}/bin/kamap.exe` on Windows and `{SKILL_DIR}/bin/kamap` on macOS/Linux. Throughout this document, `{SKILL_DIR}/bin/kamap` is used as shorthand — always append `.exe` on Windows.
 
 ## When to Use
 

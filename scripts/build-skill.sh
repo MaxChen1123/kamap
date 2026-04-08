@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 #
-# 构建 kamap 并打包到 kamap-skill
+# Build kamap and package into kamap-skill
 #
-# 用法:
-#   ./scripts/build-skill.sh              # release 编译并打包
-#   ./scripts/build-skill.sh --debug      # debug 编译并打包
-#   ./scripts/build-skill.sh --target <triple>  # 交叉编译
+# Usage:
+#   ./scripts/build-skill.sh              # release build and package
+#   ./scripts/build-skill.sh --debug      # debug build and package
+#   ./scripts/build-skill.sh --target <triple>  # cross-compile
 #
-# 该脚本会：
-# 1. 在 kamap-rust/ 目录下执行 cargo build
-# 2. 将编译产物 (kamap 二进制) 复制到 kamap-skill/bin/
-# 3. 输出打包结果信息
+# This script will:
+# 1. Run cargo build in the kamap-rust/ directory
+# 2. Copy the built binary (kamap) to kamap-skill/bin/
+# 3. Print packaging results
 
 set -euo pipefail
 
@@ -20,11 +20,11 @@ RUST_DIR="$PROJECT_ROOT/kamap-rust"
 SKILL_DIR="$PROJECT_ROOT/kamap-skill"
 BIN_DIR="$SKILL_DIR/bin"
 
-# 默认参数
+# Default parameters
 BUILD_MODE="release"
 TARGET=""
 
-# 解析参数
+# Parse arguments
 while [[ $# -gt 0 ]]; do
     case $1 in
         --debug)
@@ -64,7 +64,7 @@ fi
 echo "📦 Step 1: Building kamap ($BUILD_MODE)..."
 echo ""
 
-# 2. 编译
+# 2. Build
 CARGO_ARGS=("build" "--manifest-path" "$RUST_DIR/Cargo.toml" "-p" "kamap-cli")
 if [[ "$BUILD_MODE" == "release" ]]; then
     CARGO_ARGS+=("--release")
@@ -105,15 +105,15 @@ mkdir -p "$BIN_DIR"
 cp "$SOURCE_BINARY" "$BIN_DIR/$BINARY_NAME"
 chmod +x "$BIN_DIR/$BINARY_NAME"
 
-# 5. 输出结果
+# 5. Print results
 BINARY_SIZE=$(du -h "$BIN_DIR/$BINARY_NAME" | cut -f1)
 echo ""
 echo "=========================================="
-echo "  ✅ 打包完成!"
+echo "  ✅ Packaging complete!"
 echo "=========================================="
 echo ""
 echo "  Binary: kamap-skill/bin/$BINARY_NAME"
 echo "  Size:   $BINARY_SIZE"
 echo ""
-echo "  验证: $BIN_DIR/$BINARY_NAME --version"
+echo "  Verify: $BIN_DIR/$BINARY_NAME --version"
 "$BIN_DIR/$BINARY_NAME" --version 2>/dev/null || echo "  (binary built successfully)"
