@@ -29,6 +29,8 @@ Activate this skill when the user's request involves any of the following:
 4. **Scan requires a Git repository**: Ensure running inside a Git repo
 5. **Dual config files**: `kamap.yaml` (shared/team, commit to Git) and `.kamap.yaml` (personal, gitignored). Default writes to `.kamap.yaml`; use `--shared` flag to write to `kamap.yaml`
 6. **Config file lookup**: kamap searches upward from current directory for `kamap.yaml` or `.kamap.yaml`
+7. **CRITICAL — Personal config by default**: All `asset add`, `mapping add`, `mapping add-batch` commands write to the **personal** config (`.kamap.yaml`) by default. You MUST **NOT** use `--shared` unless the user **explicitly** states the asset/mapping should be shared or team-level. When in doubt, always default to personal config.
+8. **CRITICAL — Check existing assets before adding**: Before running `asset add`, you MUST first run `asset list --output json` to inspect all currently registered assets. This prevents duplicate registrations and helps you reference existing asset IDs when adding mappings.
 
 ## Core Capabilities
 
@@ -51,10 +53,13 @@ Automatically identify affected knowledge assets when code changes:
 
 ### 2. Mapping Management (mapping)
 
-Establish and manage associations between code and knowledge assets. All mapping subcommands support `--shared` (global flag) to write to team config.
+Establish and manage associations between code and knowledge assets.
+
+> **IMPORTANT**: By default, all mapping write commands (`add`, `add-batch`) write to the **personal** config (`.kamap.yaml`). Only add `--shared` when the user **explicitly** requests shared/team-level mappings. If the user does not mention "shared", "团队", "共享", do NOT use `--shared`.
 
 ```bash
 # Add a single mapping (dry-run by default, use --apply to write)
+# Writes to PERSONAL config by default
 {SKILL_DIR}/bin/kamap mapping add \
   --source 'src/auth/**/*.ts' \
   --asset auth-doc \
@@ -62,7 +67,7 @@ Establish and manage associations between code and knowledge assets. All mapping
   --action review \
   --apply --output json
 
-# Add with line range and write to shared config
+# Add to SHARED config (ONLY when user explicitly asks for shared/team config)
 {SKILL_DIR}/bin/kamap mapping add \
   --source src/auth/login.ts \
   --asset auth-doc \
@@ -117,10 +122,17 @@ echo '{"mappings":[
 
 ### 3. Asset Management (asset)
 
-Register and manage knowledge assets. All asset subcommands support `--shared` (global flag).
+Register and manage knowledge assets.
+
+> **IMPORTANT**: Before adding any asset, you MUST first run `asset list` to check all existing registered assets. This avoids duplicate registrations and ensures you are aware of available asset IDs for mapping.
+>
+> **IMPORTANT**: By default, `asset add` writes to the **personal** config (`.kamap.yaml`). Only add `--shared` when the user **explicitly** requests the asset be shared/team-level. If the user does not mention "shared", "团队", "共享", do NOT use `--shared`.
 
 ```bash
-# Register a new asset (dry-run by default, use --apply to write)
+# Step 1: ALWAYS list existing assets first
+{SKILL_DIR}/bin/kamap asset list --output json
+
+# Step 2: Register a new asset (writes to PERSONAL config by default)
 {SKILL_DIR}/bin/kamap asset add \
   --id my-doc \
   --provider localfs \
@@ -128,8 +140,13 @@ Register and manage knowledge assets. All asset subcommands support `--shared` (
   --target docs/my-doc.md \
   --apply --output json
 
-# List all assets
-{SKILL_DIR}/bin/kamap asset list --output json
+# Register to SHARED config (ONLY when user explicitly asks for shared/team config)
+{SKILL_DIR}/bin/kamap asset add \
+  --id my-doc \
+  --provider localfs \
+  --type markdown \
+  --target docs/my-doc.md \
+  --shared --apply --output json
 
 # Remove an asset
 {SKILL_DIR}/bin/kamap asset remove --id my-doc --output json
@@ -207,17 +224,21 @@ Output machine-readable tool description (default output: json):
 ### Workflow B: Project Initialization
 
 1. `{SKILL_DIR}/bin/kamap init --output json` to initialize the project
-2. Register all knowledge assets:
+2. Check existing registered assets first:
+   ```bash
+   {SKILL_DIR}/bin/kamap asset list --output json
+   ```
+3. Register knowledge assets (writes to **personal** config by default; add `--shared` only if user explicitly requests):
    ```bash
    {SKILL_DIR}/bin/kamap asset add --id <id> --provider localfs --type markdown --target <path> --apply --output json
    ```
-3. `{SKILL_DIR}/bin/kamap mapping export-context --output json` to export project context
-4. Analyze code-document relationships, then batch write mappings:
+4. `{SKILL_DIR}/bin/kamap mapping export-context --output json` to export project context
+5. Analyze code-document relationships, then batch write mappings (personal config by default):
    ```bash
    echo '{"mappings":[...]}' | {SKILL_DIR}/bin/kamap mapping add-batch --stdin --apply --output json
    ```
-5. `{SKILL_DIR}/bin/kamap mapping validate --output json` to verify mapping integrity
-6. `{SKILL_DIR}/bin/kamap mapping discover --output json` to find more mapping candidates
+6. `{SKILL_DIR}/bin/kamap mapping validate --output json` to verify mapping integrity
+7. `{SKILL_DIR}/bin/kamap mapping discover --output json` to find more mapping candidates
 
 ### Workflow C: AI-Assisted Mapping Generation
 
