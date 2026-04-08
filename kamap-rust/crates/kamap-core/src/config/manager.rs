@@ -255,22 +255,68 @@ impl ConfigManager {
     ///
     /// - `shared = false`（默认）：写入 `.kamap.yaml`（个人配置）
     /// - `shared = true`：写入 `kamap.yaml`（团队共享配置）
+    ///
+    /// 当双配置文件同时存在时，只写入**目标层应有的内容**：
+    /// - 写入 local 时：从合并后的 config 中减去 shared 层的内容
+    /// - 写入 shared 时：从合并后的 config 中减去 local 层的内容
+    /// 如果只有单个配置文件，则直接写入完整的 config。
     pub fn save_to(&self, shared: bool) -> Result<()> {
         let target = if shared {
             self.shared_path.as_ref().ok_or_else(|| anyhow::anyhow!("No shared config path (kamap.yaml) set"))?
         } else {
             self.local_path.as_ref().unwrap_or(&self.path)
         };
+
+        // 确定要保存的配置内容
         let config_to_save = if shared {
-            self.shared_config.as_ref().unwrap_or(&self.config)
+            // 写 shared：如果有 local 层，从 config 中剔除 local 独有的内容
+            match &self.local_config {
+                Some(local_orig) => Self::subtract_layer(&self.config, local_orig),
+                None => self.config.clone(),
+            }
         } else {
-            self.local_config.as_ref().unwrap_or(&self.config)
+            // 写 local：如果有 shared 层，从 config 中剔除 shared 已有的内容
+            match &self.shared_config {
+                Some(shared_orig) => Self::subtract_layer(&self.config, shared_orig),
+                None => self.config.clone(),
+            }
         };
-        let content = serde_yaml::to_string(config_to_save)
+
+        let content = serde_yaml::to_string(&config_to_save)
             .with_context(|| "Failed to serialize config")?;
         std::fs::write(target, content)
             .with_context(|| format!("Failed to write config file: {}", target.display()))?;
         Ok(())
+    }
+
+    /// 从合并后的 config 中减去另一层的原始内容，得到当前层的增量。
+    ///
+    /// - plugins: 移除 other 中已有的插件
+    /// - assets: 移除与 other 中完全相同的资产（同 ID 同内容），保留新增或修改的
+    /// - mappings: 同上
+    /// - policies: 保留全部（无法精确区分来源）
+    /// - discovery: 如果与 other 相同则使用默认值，否则保留
+    fn subtract_layer(merged: &ProjectConfig, other: &ProjectConfig) -> ProjectConfig {
+        let mut result = merged.clone();
+
+        // plugins: 移除 other 中已有的（按 name 匹配）
+        result.plugins.retain(|p| !other.plugins.iter().any(|op| op.name == p.name));
+
+        // assets: 移除与 other 中完全相同的（同 ID + 同 target），保留新增或修改的
+        result.assets.retain(|a| {
+            !other.assets.iter().any(|oa| oa.id == a.id && oa.target == a.target
+                && oa.provider == a.provider && oa.asset_type == a.asset_type)
+        });
+
+        // mappings: 移除 other 中已有的（按 ID 匹配，且 source path 相同）
+        result.mappings.retain(|m| {
+            !other.mappings.iter().any(|om| om.id == m.id && om.source.path == m.source.path)
+        });
+
+        // policies: 保留全部（无法精确区分来源，追加模式）
+        // discovery: 保留当前值（写入方拥有 discovery 的完整控制权）
+
+        result
     }
 
     /// 获取配置的不可变引用
