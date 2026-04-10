@@ -38,7 +38,7 @@ pub struct AssetAddArgs {
     pub id: String,
     #[arg(long)]
     pub provider: String,
-    #[arg(long, name = "type")]
+    #[arg(long, alias = "type", name = "asset-type")]
     pub asset_type: String,
     #[arg(long)]
     pub target: String,
