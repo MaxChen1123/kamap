@@ -1,6 +1,8 @@
 use std::path::{Path, PathBuf};
+use std::fs::OpenOptions;
 
 use anyhow::{Context, Result};
+use fs2::FileExt;
 
 use crate::models::{AssetDef, AssetFilter, BatchResult, MappingDef, MappingFilter, MappingUpdate, MergeStrategy};
 
@@ -351,6 +353,60 @@ impl ConfigManager {
         std::fs::write(target, content)
             .with_context(|| format!("Failed to write config file: {}", target.display()))?;
         Ok(())
+    }
+
+    /// 带文件锁的原子「加载→修改→保存」操作。
+    ///
+    /// 使用排他锁（exclusive lock）确保同一时刻只有一个进程可以修改配置文件，
+    /// 避免并发写入导致数据丢失。
+    ///
+    /// `shared_path` / `local_path`：配置文件路径（与 `load_merged` 相同）
+    /// `shared`：写入目标（true=kamap.yaml, false=.kamap.yaml）
+    /// `modify_fn`：在持有锁期间对 ConfigManager 进行修改的闭包
+    pub fn locked_modify<F>(
+        shared_path: Option<&Path>,
+        local_path: Option<&Path>,
+        shared: bool,
+        modify_fn: F,
+    ) -> Result<Self>
+    where
+        F: FnOnce(&mut Self) -> Result<()>,
+    {
+        // 确定锁文件路径：在目标配置文件旁边创建 .lock 文件
+        let lock_dir = shared_path
+            .or(local_path)
+            .and_then(|p| p.parent())
+            .unwrap_or(Path::new("."));
+        let lock_file_path = lock_dir.join(".kamap.lock");
+
+        // 打开（或创建）锁文件并获取排他锁
+        let lock_file = OpenOptions::new()
+            .create(true)
+            .write(true)
+            .truncate(false)
+            .open(&lock_file_path)
+            .with_context(|| format!("Failed to open lock file: {}", lock_file_path.display()))?;
+
+        lock_file.lock_exclusive()
+            .with_context(|| "Failed to acquire exclusive lock on config")?;
+
+        // 在锁保护下：加载最新配置
+        let mut cm = Self::load_merged(shared_path, local_path)?;
+
+        // 执行修改
+        let result = modify_fn(&mut cm);
+
+        if result.is_ok() {
+            // 保存修改后的配置
+            cm.save_to(shared)?;
+        }
+
+        // 释放锁
+        lock_file.unlock()
+            .with_context(|| "Failed to release config lock")?;
+
+        result?;
+        Ok(cm)
     }
 
     /// 从合并后的 config 中减去另一层的原始内容，得到当前层的增量。
