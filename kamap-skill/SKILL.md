@@ -36,6 +36,7 @@ Activate this skill when the user's request involves any of the following:
 7. **CRITICAL — Personal config by default**: All `asset add`, `mapping add`, `mapping add-batch` commands write to the **personal** config (`.kamap.yaml`) by default. You MUST **NOT** use `--shared` unless the user **explicitly** states the asset/mapping should be shared or team-level. When in doubt, always default to personal config.
 8. **CRITICAL — Check existing assets before adding**: Before running `asset add`, you MUST first run `asset list --output json` to inspect all currently registered assets. This prevents duplicate registrations and helps you reference existing asset IDs when adding mappings.
 9. **CRITICAL — No `asset-type` or `type` subcommand**: There is NO subcommand called `asset-type` or `asset type` or `type`. The asset type (e.g. `markdown`, `text`, `config`, `sqlite-db`) is specified via the `--type` **flag** on the `asset add` subcommand. The correct usage is: `kamap asset add --id <id> --provider <provider> --type <type> --target <path>`. Do NOT confuse `--type` (a flag) with a subcommand.
+10. **CRITICAL — Prefer precise mappings**: When configuring mappings, you MUST strive for the highest possible precision. Avoid mapping an entire file when only a specific section is relevant. Use the `--lines` flag (for `mapping add`) or `source_lines` field (for `mapping add-batch`) to narrow the scope to the exact line range that is related to the target asset. For example, if only lines 20–80 of a file contain the relevant implementation, map `--lines '20-80'` instead of the whole file. Precise mappings significantly reduce false-positive impacts during `scan`, making the tool more useful and less noisy. When analyzing code to generate mappings, take the time to identify the specific functions, structs, or blocks that are truly related to each asset, and specify their line ranges accordingly.
 
 ## Core Capabilities
 
@@ -249,7 +250,7 @@ Output machine-readable tool description (default output: json):
 
 1. `{SKILL_DIR}/bin/kamap mapping export-context --output json` to get project context
 2. Analyze the context: code files, existing assets, existing mappings, unmapped code files, unmapped assets
-3. Generate mapping suggestions as batch JSON
+3. Generate mapping suggestions as batch JSON — for each mapping, identify the **precise line range** of the relevant code (specific functions, structs, or blocks) and include `source_lines` to avoid over-broad whole-file mappings
 4. `echo '{"mappings":[...]}' | {SKILL_DIR}/bin/kamap mapping add-batch --stdin --apply --output json` to batch write
 5. `{SKILL_DIR}/bin/kamap mapping validate --output json` to validate
 
