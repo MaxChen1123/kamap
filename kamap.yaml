@@ -2,8 +2,196 @@ version: '1'
 plugins:
 - name: localfs
   enabled: true
-assets: []
-mappings: []
+assets:
+- id: readme-zh
+  provider: localfs
+  type: markdown
+  target: README.md
+- id: readme-en
+  provider: localfs
+  type: markdown
+  target: README_en.md
+mappings:
+- id: map_d88c84fb
+  source:
+    path: kamap-rust/Cargo.toml
+  asset: readme-zh
+  reason: workspace 配置和依赖，README 构建章节引用
+  action: review
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-10T11:50:06.945978+00:00
+- id: map_96650e78
+  source:
+    path: kamap-rust/Cargo.toml
+  asset: readme-en
+  reason: workspace config and deps, referenced in Build section
+  action: review
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-10T11:50:06.945980+00:00
+- id: map_675569b6
+  source:
+    path: kamap-rust/crates/kamap-cli/src/main.rs
+  asset: readme-zh
+  reason: CLI 入口和子命令定义，README 整体命令说明
+  action: review
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-10T11:50:06.945981+00:00
+- id: map_ae4c9563
+  source:
+    path: kamap-rust/crates/kamap-cli/src/main.rs
+  asset: readme-en
+  reason: CLI entry and subcommand definitions, overall command doc
+  action: review
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-10T11:50:06.945982+00:00
+- id: map_d357fa6f
+  source:
+    path: kamap-rust/crates/kamap-cli/src/commands/init.rs
+  asset: readme-zh
+  reason: init 命令实现，对应 README 初始化章节
+  action: update
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-10T11:50:06.945984+00:00
+- id: map_ecba1c5c
+  source:
+    path: kamap-rust/crates/kamap-cli/src/commands/init.rs
+  asset: readme-en
+  reason: init command impl, corresponds to Initialize section
+  action: update
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-10T11:50:06.945986+00:00
+- id: map_85283595
+  source:
+    path: kamap-rust/crates/kamap-cli/src/commands/asset.rs
+  asset: readme-zh
+  reason: asset 命令实现，对应 README 注册资产章节
+  action: update
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-10T11:50:06.945987+00:00
+- id: map_307db56d
+  source:
+    path: kamap-rust/crates/kamap-cli/src/commands/asset.rs
+  asset: readme-en
+  reason: asset command impl, corresponds to Register Asset section
+  action: update
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-10T11:50:06.945988+00:00
+- id: map_e111ec78
+  source:
+    path: kamap-rust/crates/kamap-cli/src/commands/mapping.rs
+  asset: readme-zh
+  reason: mapping 命令实现，对应 README 创建映射章节
+  action: update
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-10T11:50:06.945990+00:00
+- id: map_00fd6497
+  source:
+    path: kamap-rust/crates/kamap-cli/src/commands/mapping.rs
+  asset: readme-en
+  reason: mapping command impl, corresponds to Create Mapping section
+  action: update
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-10T11:50:06.945991+00:00
+- id: map_416b47ea
+  source:
+    path: kamap-rust/crates/kamap-cli/src/commands/scan.rs
+  asset: readme-zh
+  reason: scan 命令实现，对应 README 扫描影响章节
+  action: update
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-10T11:50:06.945992+00:00
+- id: map_7f1aea87
+  source:
+    path: kamap-rust/crates/kamap-cli/src/commands/scan.rs
+  asset: readme-en
+  reason: scan command impl, corresponds to Scan for Impacts section
+  action: update
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-10T11:50:06.945993+00:00
+- id: map_f30f478d
+  source:
+    path: kamap-rust/crates/kamap-cli/src/commands/check.rs
+  asset: readme-zh
+  reason: check 命令实现，README 扫描影响章节提及 CI 检查
+  action: review
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-10T11:50:06.945994+00:00
+- id: map_5e191829
+  source:
+    path: kamap-rust/crates/kamap-cli/src/commands/check.rs
+  asset: readme-en
+  reason: check command impl, CI check mentioned in Scan section
+  action: review
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-10T11:50:06.945995+00:00
+- id: map_2a62147f
+  source:
+    path: scripts/build-skill.sh
+  asset: readme-zh
+  reason: 打包脚本，对应 README 打包 Skill 章节
+  action: update
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-10T11:50:06.945996+00:00
+- id: map_3812627e
+  source:
+    path: scripts/build-skill.sh
+  asset: readme-en
+  reason: packaging script, corresponds to Packaging as a Skill section
+  action: update
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-10T11:50:06.945998+00:00
+- id: map_5a1783de
+  source:
+    path: kamap-skill/SKILL.md
+  asset: readme-zh
+  reason: Skill 描述文件，对应 README 安装 Skill 章节
+  action: review
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-10T11:50:06.945999+00:00
+- id: map_53c0759a
+  source:
+    path: kamap-skill/SKILL.md
+  asset: readme-en
+  reason: Skill description, corresponds to Installing Skill section
+  action: review
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-10T11:50:06.946+00:00
+- id: map_d34d058a
+  source:
+    path: kamap-rust/crates/kamap-core/src/config/manager.rs
+  asset: readme-zh
+  reason: 核心配置管理器，README 中初始化和配置说明的实现基础
+  action: review
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-10T11:50:06.946002+00:00
+- id: map_4a7f16d4
+  source:
+    path: kamap-rust/crates/kamap-core/src/config/manager.rs
+  asset: readme-en
+  reason: core config manager, foundation for init and config docs
+  action: review
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-10T11:50:06.946003+00:00
 policies: []
 discovery:
   annotation:

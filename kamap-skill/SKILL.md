@@ -37,6 +37,7 @@ Activate this skill when the user's request involves any of the following:
 8. **CRITICAL — Check existing assets before adding**: Before running `asset add`, you MUST first run `asset list --output json` to inspect all currently registered assets. This prevents duplicate registrations and helps you reference existing asset IDs when adding mappings.
 9. **CRITICAL — No `asset-type` or `type` subcommand**: There is NO subcommand called `asset-type` or `asset type` or `type`. The asset type (e.g. `markdown`, `text`, `config`, `sqlite-db`) is specified via the `--type` **flag** on the `asset add` subcommand. The correct usage is: `kamap asset add --id <id> --provider <provider> --type <type> --target <path>`. Do NOT confuse `--type` (a flag) with a subcommand.
 10. **CRITICAL — Prefer precise mappings**: When configuring mappings, you MUST strive for the highest possible precision. Avoid mapping an entire file when only a specific section is relevant. Use the `--lines` flag (for `mapping add`) or `source_lines` field (for `mapping add-batch`) to narrow the scope to the exact line range that is related to the target asset. For example, if only lines 20–80 of a file contain the relevant implementation, map `--lines '20-80'` instead of the whole file. Precise mappings significantly reduce false-positive impacts during `scan`, making the tool more useful and less noisy. When analyzing code to generate mappings, take the time to identify the specific functions, structs, or blocks that are truly related to each asset, and specify their line ranges accordingly.
+11. **CRITICAL — Use batch commands for multiple items**: When adding **2 or more** assets, you **MUST** use `asset add-batch` instead of calling `asset add` multiple times. Similarly, use `mapping add-batch` for multiple mappings. Running multiple single-add commands in parallel causes write race conditions. Batch commands are atomic and safe.
 
 ## Core Capabilities
 
@@ -133,12 +134,14 @@ Register and manage knowledge assets.
 > **IMPORTANT**: Before adding any asset, you MUST first run `asset list` to check all existing registered assets. This avoids duplicate registrations and ensures you are aware of available asset IDs for mapping.
 >
 > **IMPORTANT**: By default, `asset add` writes to the **personal** config (`.kamap.yaml`). Only add `--shared` when the user **explicitly** requests the asset be shared/team-level. If the user does not mention "shared", "团队", "共享", do NOT use `--shared`.
+>
+> **CRITICAL — Prefer batch add over multiple single adds**: When registering **2 or more** assets, you **MUST** use `asset add-batch` instead of calling `asset add` multiple times. Running multiple `asset add` commands in parallel causes a race condition where later writes overwrite earlier ones, resulting in lost assets. `add-batch` handles all assets in a single atomic operation. **Never call `asset add` multiple times in parallel.**
 
 ```bash
 # Step 1: ALWAYS list existing assets first
 {SKILL_DIR}/bin/kamap asset list --output json
 
-# Step 2: Register a new asset (writes to PERSONAL config by default)
+# Step 2a: Register a SINGLE asset (writes to PERSONAL config by default)
 {SKILL_DIR}/bin/kamap asset add \
   --id my-doc \
   --provider localfs \
@@ -146,7 +149,18 @@ Register and manage knowledge assets.
   --target docs/my-doc.md \
   --apply --output json
 
+# Step 2b: PREFERRED — Batch register MULTIPLE assets in one atomic operation
+echo '{"assets":[
+  {"id":"readme-zh","provider":"localfs","type":"markdown","target":"README.md"},
+  {"id":"readme-en","provider":"localfs","type":"markdown","target":"README_en.md"},
+  {"id":"api-doc","provider":"localfs","type":"markdown","target":"docs/api.md"}
+]}' | {SKILL_DIR}/bin/kamap asset add-batch --stdin --apply --output json
+
+# Batch add from file
+{SKILL_DIR}/bin/kamap asset add-batch --file assets.json --apply --output json
+
 # Register to SHARED config (ONLY when user explicitly asks for shared/team config)
+# For single asset:
 {SKILL_DIR}/bin/kamap asset add \
   --id my-doc \
   --provider localfs \
@@ -154,12 +168,21 @@ Register and manage knowledge assets.
   --target docs/my-doc.md \
   --shared --apply --output json
 
+# For batch (shared):
+echo '{"assets":[...]}' | {SKILL_DIR}/bin/kamap asset add-batch --stdin --shared --apply --output json
+
 # Remove an asset
 {SKILL_DIR}/bin/kamap asset remove --id my-doc --output json
 
 # Health check all assets
 {SKILL_DIR}/bin/kamap asset check --output json
 ```
+
+**Batch JSON format** — the `assets` array accepts objects with:
+- `id` (required): Unique asset identifier
+- `provider` (required): Plugin provider name (e.g. `localfs`, `sqlite`)
+- `type` (required): Asset type (e.g. `markdown`, `text`, `config`, `sqlite-db`)
+- `target` (required): Asset target path or URL
 
 **Built-in providers**: `localfs` (types: `markdown`, `text`, `config`) and `sqlite` (type: `sqlite-db`).
 
@@ -234,9 +257,16 @@ Output machine-readable tool description (default output: json):
    ```bash
    {SKILL_DIR}/bin/kamap asset list --output json
    ```
-3. Register knowledge assets (writes to **personal** config by default; add `--shared` only if user explicitly requests):
+3. Register knowledge assets (writes to **personal** config by default; add `--shared` only if user explicitly requests). **Use batch add when registering multiple assets**:
    ```bash
+   # Single asset
    {SKILL_DIR}/bin/kamap asset add --id <id> --provider localfs --type markdown --target <path> --apply --output json
+
+   # Multiple assets (PREFERRED — atomic, no race conditions)
+   echo '{"assets":[
+     {"id":"<id1>","provider":"localfs","type":"markdown","target":"<path1>"},
+     {"id":"<id2>","provider":"localfs","type":"markdown","target":"<path2>"}
+   ]}' | {SKILL_DIR}/bin/kamap asset add-batch --stdin --apply --output json
    ```
 4. `{SKILL_DIR}/bin/kamap mapping export-context --output json` to export project context
 5. Analyze code-document relationships, then batch write mappings (personal config by default):
