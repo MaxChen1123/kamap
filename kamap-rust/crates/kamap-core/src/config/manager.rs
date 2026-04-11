@@ -390,26 +390,28 @@ impl ConfigManager {
         lock_file.lock_exclusive()
             .with_context(|| "Failed to acquire exclusive lock on config")?;
 
-        // 在锁保护下：加载最新配置
-        let mut cm = Self::load_merged(shared_path, local_path)?;
+        // 使用闭包捕获所有可能失败的操作，确保无论成功失败都清理锁文件
+        let outcome = (|| -> Result<Self> {
+            // 在锁保护下：加载最新配置
+            let mut cm = Self::load_merged(shared_path, local_path)?;
 
-        // 执行修改
-        let result = modify_fn(&mut cm);
+            // 执行修改
+            let result = modify_fn(&mut cm);
 
-        if result.is_ok() {
-            // 保存修改后的配置
-            cm.save_to(shared)?;
-        }
+            if result.is_ok() {
+                // 保存修改后的配置
+                cm.save_to(shared)?;
+            }
 
-        // 释放锁
-        lock_file.unlock()
-            .with_context(|| "Failed to release config lock")?;
+            result?;
+            Ok(cm)
+        })();
 
-        // 删除锁文件，避免残留空文件困扰用户
+        // 无论成功失败，都释放锁并删除锁文件
+        let _ = lock_file.unlock();
         let _ = std::fs::remove_file(&lock_file_path);
 
-        result?;
-        Ok(cm)
+        outcome
     }
 
     /// 从合并后的 config 中减去另一层的原始内容，得到当前层的增量。
