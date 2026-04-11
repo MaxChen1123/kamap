@@ -35,7 +35,7 @@ pub fn run(args: CheckArgs) -> Result<()> {
 
     let diff_result = DiffAnalyzer::analyze(&workspace, &args.base, &args.head)?;
     let engine = MappingEngine::build(config, &workspace)?;
-    let hits = engine.resolve(&diff_result.changes);
+    let hits = engine.resolve(&diff_result.changes, &workspace);
     let report = ImpactAnalyzer::analyze(
         hits,
         config,

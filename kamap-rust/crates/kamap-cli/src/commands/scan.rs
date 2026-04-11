@@ -76,7 +76,7 @@ fn run_scan(args: ScanArgs) -> Result<()> {
 
     // 2. 映射匹配
     let engine = MappingEngine::build(config, &workspace)?;
-    let hits = engine.resolve(&diff_result.changes);
+    let hits = engine.resolve(&diff_result.changes, &workspace);
 
     // 3. 影响分析
     let report = ImpactAnalyzer::analyze(

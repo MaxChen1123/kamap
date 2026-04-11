@@ -891,6 +891,8 @@ mod tests {
                 source: SourceLocator {
                     path: "src/**/*.rs".to_string(),
                     lines: None,
+                    anchor: None,
+                    anchor_context: None,
                 },
                 asset: "test-doc".to_string(),
                 segment: None,
@@ -912,6 +914,8 @@ mod tests {
             source: SourceLocator {
                 path: "src/**/*.rs".to_string(),
                 lines: None,
+                anchor: None,
+                anchor_context: None,
             },
             asset: "nonexistent".to_string(),
             segment: None,
@@ -931,6 +935,8 @@ mod tests {
             source: SourceLocator {
                 path: "src/x.rs".to_string(),
                 lines: None,
+                anchor: None,
+                anchor_context: None,
             },
             asset: "nonexistent".to_string(),
             segment: None,

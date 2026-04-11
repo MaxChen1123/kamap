@@ -2,6 +2,7 @@ pub mod models;
 pub mod config;
 pub mod git;
 pub mod mapping;
+pub mod anchor;
 pub mod analyzer;
 pub mod builder;
 pub mod plugin;

@@ -39,12 +39,32 @@ kamap asset add \
 ### 创建映射
 
 ```bash
+# 使用语义锚点精确映射到某个函数/类（推荐）
+kamap mapping add \
+  --source src/api/handler.rs \
+  --asset api-doc \
+  --anchor 'fn handle_request' \
+  --reason '请求处理函数' \
+  --apply
+
+# 使用 anchor-context 消歧（当同名锚点存在多个时）
+kamap mapping add \
+  --source src/api/handler.rs \
+  --asset api-doc \
+  --anchor 'fn new' \
+  --anchor-context 'impl RequestHandler' \
+  --reason '构造函数' \
+  --apply
+
+# 整文件映射（适用于小文件或配置文件）
 kamap mapping add \
   --source 'src/api/**/*.rs' \
   --asset api-doc \
   --reason '接口实现代码' \
   --apply
 ```
+
+> **语义锚点**（`--anchor`）是 kamap v0.2 引入的推荐映射方式。相比静态行号（`--lines`），锚点在代码重构后不会漂移，始终定位到目标函数/类/块的实际位置。`--lines` 仍然可用但不推荐。
 
 ### 扫描影响
 

@@ -54,6 +54,8 @@ impl DiscoveryStrategy for NamingMatcher {
                                     source: SourceLocator {
                                         path: rule.source.replace("{module}", &module_name),
                                         lines: None,
+                                        anchor: None,
+                                        anchor_context: None,
                                     },
                                     asset_id: asset.id.clone(),
                                     reason: format!(

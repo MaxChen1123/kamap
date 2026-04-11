@@ -12,6 +12,8 @@ pub struct FileIndexEntry {
     pub asset_id: String,
     pub matcher: GlobMatcher,
     pub lines: Option<[u32; 2]>,
+    pub anchor: Option<String>,
+    pub anchor_context: Option<String>,
     pub segment: Option<serde_json::Value>,
 }
 
@@ -35,6 +37,8 @@ impl MappingIndex {
                 asset_id: mapping.asset.clone(),
                 matcher,
                 lines: mapping.source.lines,
+                anchor: mapping.source.anchor.clone(),
+                anchor_context: mapping.source.anchor_context.clone(),
                 segment: mapping.segment.clone(),
             });
         }

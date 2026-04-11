@@ -36,7 +36,26 @@ Activate this skill when the user's request involves any of the following:
 7. **CRITICAL — Personal config by default**: All `asset add`, `mapping add`, `mapping add-batch` commands write to the **personal** config (`.kamap.yaml`) by default. You MUST **NOT** use `--shared` unless the user **explicitly** states the asset/mapping should be shared or team-level. When in doubt, always default to personal config.
 8. **CRITICAL — Check existing assets before adding**: Before running `asset add`, you MUST first run `asset list --output json` to inspect all currently registered assets. This prevents duplicate registrations and helps you reference existing asset IDs when adding mappings.
 9. **CRITICAL — No `asset-type` or `type` subcommand**: There is NO subcommand called `asset-type` or `asset type` or `type`. The asset type (e.g. `markdown`, `text`, `config`, `sqlite-db`) is specified via the `--type` **flag** on the `asset add` subcommand. The correct usage is: `kamap asset add --id <id> --provider <provider> --type <type> --target <path>`. Do NOT confuse `--type` (a flag) with a subcommand.
-10. **CRITICAL — Prefer precise mappings**: When configuring mappings, you MUST strive for the highest possible precision. Avoid mapping an entire file when only a specific section is relevant. Use the `--lines` flag (for `mapping add`) or `source_lines` field (for `mapping add-batch`) to narrow the scope to the exact line range that is related to the target asset. For example, if only lines 20–80 of a file contain the relevant implementation, map `--lines '20-80'` instead of the whole file. Precise mappings significantly reduce false-positive impacts during `scan`, making the tool more useful and less noisy. When analyzing code to generate mappings, take the time to identify the specific functions, structs, or blocks that are truly related to each asset, and specify their line ranges accordingly.
+10. **CRITICAL — Use semantic anchors or whole-file mapping**: When configuring mappings, choose the appropriate granularity:
+
+    - **Whole-file mapping (no anchor, no lines)** — **prefer this when appropriate**: Use this when the entire file is relevant to the asset. This is the simpler and correct choice in many common situations:
+      - The file is small or single-purpose (e.g. a single module, a config file, a data model definition)
+      - Most or all of the file's content relates to the target asset
+      - The file contains tightly coupled code where changes to any part could affect the asset
+      - The file is a non-code file (YAML, TOML, JSON, Markdown, etc.)
+      **Do NOT add an anchor just for the sake of having one** — if the whole file matters, a whole-file mapping is both simpler and more correct.
+    - **Semantic anchor (`anchor` field)**: Use this **only when** a specific function, class, struct, or code block within a **large file** is relevant, while other parts of the same file are not. The `anchor` is a text pattern (e.g. `"fn login"`, `"class AuthService"`, `"def handle_request"`) that kamap uses to **dynamically locate** the code block at scan time. Unlike static line numbers, anchors automatically track code that moves due to insertions/deletions elsewhere in the file, eliminating false positives from line drift.
+    - **Do NOT use static line numbers** (`--lines` / `source_lines`): Static line numbers become stale as soon as code is inserted or deleted above the mapped range, causing both false positives and missed detections. Always prefer `anchor` over `source_lines`.
+
+    **When to use anchor vs whole-file — decision rule**:
+    - File has **one main concern** (e.g. `login.rs` only does login) → **whole-file mapping**
+    - File has **multiple unrelated concerns** (e.g. `commands.rs` with `fn scan`, `fn check`, `fn init` each mapping to different docs) → **anchor per function**
+    - Not sure → **default to whole-file mapping**; it's better to have a slightly broad mapping than a broken one
+
+    **How to choose an anchor**: Read the source file, identify the function/class/struct name that is relevant, and use it as the anchor text. The anchor should be **unique within the file** — if there are multiple items with the same name (e.g. `fn new` in different impl blocks), use `anchor_context` to disambiguate:
+    ```json
+    {"source_path":"src/auth.rs","asset_id":"token-doc","anchor":"fn new","anchor_context":"impl Token","reason":"Token constructor"}
+    ```
 11. **CRITICAL — Use batch commands for multiple items**: When adding **2 or more** assets, you **MUST** use `asset add-batch` instead of calling `asset add` multiple times. Similarly, use `mapping add-batch` for multiple mappings. Running multiple single-add commands in parallel causes write race conditions. Batch commands are atomic and safe.
 
 ## Core Capabilities
@@ -65,28 +84,39 @@ Establish and manage associations between code and knowledge assets.
 > **IMPORTANT**: By default, all mapping write commands (`add`, `add-batch`) write to the **personal** config (`.kamap.yaml`). Only add `--shared` when the user **explicitly** requests shared/team-level mappings. If the user does not mention "shared", "团队", "共享", do NOT use `--shared`.
 
 ```bash
-# Add a single mapping (dry-run by default, use --apply to write)
-# Writes to PERSONAL config by default
-{SKILL_DIR}/bin/kamap mapping add \
-  --source 'src/auth/**/*.ts' \
-  --asset auth-doc \
-  --reason '认证模块实现' \
-  --action review \
-  --apply --output json
-
-# Add to SHARED config (ONLY when user explicitly asks for shared/team config)
+# Add a mapping with semantic anchor (RECOMMENDED)
 {SKILL_DIR}/bin/kamap mapping add \
   --source src/auth/login.ts \
   --asset auth-doc \
-  --lines '10-45' \
-  --reason 'Login flow' \
+  --anchor 'function login' \
+  --reason '登录函数实现' \
   --action update \
-  --shared --apply --output json
+  --apply --output json
+
+# Add a whole-file mapping (for small files or config files)
+{SKILL_DIR}/bin/kamap mapping add \
+  --source 'src/config/**/*.yaml' \
+  --asset config-doc \
+  --reason '配置文件' \
+  --action review \
+  --apply --output json
+
+# Add with anchor + context for disambiguation
+{SKILL_DIR}/bin/kamap mapping add \
+  --source src/auth.rs \
+  --asset token-doc \
+  --anchor 'fn new' \
+  --anchor-context 'impl Token' \
+  --reason 'Token constructor' \
+  --action update \
+  --apply --output json
 
 # Batch add mappings from JSON (via stdin or --file)
+# NOTE: Use "anchor" field for precise block-level mappings
 echo '{"mappings":[
-  {"source_path":"src/foo.rs","asset_id":"my-doc","reason":"实现代码"},
-  {"source_path":"src/bar.rs","asset_id":"my-doc","reason":"辅助模块","action":"review","source_lines":[10,45]}
+  {"source_path":"src/auth.rs","asset_id":"login-doc","anchor":"fn login","reason":"登录实现","action":"update"},
+  {"source_path":"src/auth.rs","asset_id":"logout-doc","anchor":"fn logout","reason":"登出实现","action":"update"},
+  {"source_path":"src/config.rs","asset_id":"config-doc","reason":"配置模块（整文件）","action":"review"}
 ]}' | {SKILL_DIR}/bin/kamap mapping add-batch --stdin --apply --output json
 
 # Batch add from file
@@ -122,9 +152,11 @@ echo '{"mappings":[
 **Batch JSON format** — the `mappings` array accepts objects with:
 - `source_path` (required): Source file path or glob
 - `asset_id` (required): Target asset ID
-- `reason` (optional): Why this mapping exists
+- `anchor` (recommended): Semantic anchor text to locate the relevant code block (e.g. `"fn login"`, `"class AuthService"`). Used for dynamic block-level matching that is immune to line drift. Omit only for whole-file mappings.
+- `anchor_context` (optional): Outer scope text for disambiguation when multiple blocks share the same anchor name (e.g. `"impl Token"`)
+- `reason` (optional but recommended): Why this mapping exists
 - `action` (optional): `"review"`, `"update"`, `"verify"`, `"acknowledge"`
-- `source_lines` (optional): `[start, end]` line range array
+- `source_lines` (deprecated, avoid): `[start, end]` static line range — prefer `anchor` instead
 - `segment` (optional): JSON object for targeting specific asset sections
 
 ### 3. Asset Management (asset)
@@ -280,8 +312,22 @@ Output machine-readable tool description (default output: json):
 
 1. `{SKILL_DIR}/bin/kamap mapping export-context --output json` to get project context
 2. Analyze the context: code files, existing assets, existing mappings, unmapped code files, unmapped assets
-3. Generate mapping suggestions as batch JSON — for each mapping, identify the **precise line range** of the relevant code (specific functions, structs, or blocks) and include `source_lines` to avoid over-broad whole-file mappings
-4. `echo '{"mappings":[...]}' | {SKILL_DIR}/bin/kamap mapping add-batch --stdin --apply --output json` to batch write
-5. `{SKILL_DIR}/bin/kamap mapping validate --output json` to validate
+3. **For each unmapped code file that relates to an asset**, decide the mapping granularity:
+   a. **Read the file** to understand its structure (functions, structs, classes, modules)
+   b. **For large files with distinct sections**: identify which functions/classes relate to which asset, and use `anchor` for each
+   c. **For small or single-purpose files**: use whole-file mapping (no anchor)
+   d. **For disambiguation**: if a file has multiple items with the same name (e.g. `fn new` in different impl blocks), use `anchor_context`
+4. Generate the batch JSON:
+   ```json
+   {"mappings":[
+     {"source_path":"src/commands/scan.rs","asset_id":"readme-zh","anchor":"fn run_scan","reason":"scan 命令主实现","action":"update"},
+     {"source_path":"src/commands/scan.rs","asset_id":"readme-zh","anchor":"fn run_ack","reason":"scan ack 子命令实现","action":"update"},
+     {"source_path":"src/config/manager.rs","asset_id":"readme-en","anchor":"fn load_merged","reason":"Config loading logic","action":"review"},
+     {"source_path":"src/models/source.rs","asset_id":"readme-en","reason":"Source model (whole file)","action":"review"}
+   ]}
+   ```
+   Notice how `scan.rs` has **two separate anchor-based mappings** for different functions, while `source.rs` uses a whole-file mapping since it's a small data model file.
+5. `echo '{"mappings":[...]}' | {SKILL_DIR}/bin/kamap mapping add-batch --stdin --apply --output json` to batch write
+6. `{SKILL_DIR}/bin/kamap mapping validate --output json` to validate
 
 For detailed information on auto-discovery strategies (@kamap annotations, frontmatter, naming conventions) and complete command parameter reference, see `{SKILL_DIR}/references/detailed-guide.md`. Note: the `mapping discover` CLI command is **temporarily disabled**.

@@ -2,6 +2,7 @@ use std::path::Path;
 
 use anyhow::Result;
 
+use crate::anchor::resolve_anchor;
 use crate::config::ProjectConfig;
 use crate::models::{ChangeEntry, HitType, HunkRange, MappingHit, SourceMatch};
 
@@ -20,7 +21,9 @@ impl MappingEngine {
     }
 
     /// 给定变更列表，返回命中的映射
-    pub fn resolve(&self, changes: &[ChangeEntry]) -> Vec<MappingHit> {
+    ///
+    /// `workspace` 用于读取文件以解析 anchor。
+    pub fn resolve(&self, changes: &[ChangeEntry], workspace: &Path) -> Vec<MappingHit> {
         let mut hits = Vec::new();
 
         for change in changes {
@@ -30,12 +33,20 @@ impl MappingEngine {
                     continue;
                 }
 
-                // 如果映射定义了行范围
-                if let Some(defined_range) = &entry.lines {
-                    // 需要检查 hunk 是否与定义的行范围重叠
+                // 确定有效行范围：anchor 优先，其次 static lines
+                let effective_range = self.resolve_effective_range(
+                    entry.anchor.as_deref(),
+                    entry.anchor_context.as_deref(),
+                    entry.lines,
+                    &change.path,
+                    workspace,
+                );
+
+                if let Some(defined_range) = effective_range {
+                    // 行范围匹配：检查 hunk 是否与定义的行范围重叠
                     let mut matched_hunks = Vec::new();
                     for hunk in &change.hunks {
-                        if hunks_overlap(hunk, defined_range) {
+                        if hunks_overlap(hunk, &defined_range) {
                             matched_hunks.push(hunk.clone());
                         }
                     }
@@ -50,7 +61,7 @@ impl MappingEngine {
                             asset_id: entry.asset_id.clone(),
                             segment: entry.segment.clone(),
                             hit_type: HitType::RangeOverlap {
-                                defined_range: *defined_range,
+                                defined_range,
                                 change_hunk: change.hunks.first().cloned().unwrap_or(HunkRange {
                                     start_line: 0,
                                     end_line: 0,
@@ -77,6 +88,42 @@ impl MappingEngine {
 
         hits
     }
+
+    /// 解析有效行范围。
+    ///
+    /// 优先级：anchor > static lines > None（全文件）
+    fn resolve_effective_range(
+        &self,
+        anchor: Option<&str>,
+        anchor_context: Option<&str>,
+        static_lines: Option<[u32; 2]>,
+        file_path: &str,
+        workspace: &Path,
+    ) -> Option<[u32; 2]> {
+        // 1. 尝试 anchor 解析
+        if let Some(anchor_text) = anchor {
+            let full_path = workspace.join(file_path);
+            if let Ok(content) = std::fs::read_to_string(&full_path) {
+                if let Some(result) = resolve_anchor(&content, anchor_text, anchor_context) {
+                    return Some([result.start_line, result.end_line]);
+                }
+                // Anchor not found: log warning, fall through to static lines
+                eprintln!(
+                    "⚠️  Anchor '{}' not found in '{}', falling back to {}",
+                    anchor_text,
+                    file_path,
+                    if static_lines.is_some() {
+                        "static line range"
+                    } else {
+                        "whole-file match"
+                    }
+                );
+            }
+        }
+
+        // 2. Fallback: static lines
+        static_lines
+    }
 }
 
 /// 判断变更 hunk 与映射定义行范围是否重叠
@@ -87,7 +134,7 @@ fn hunks_overlap(hunk: &HunkRange, range: &[u32; 2]) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::{ChangeType, SourceLocator, MappingDef};
+    use crate::models::{ChangeType, MappingDef, MappingMeta, SourceLocator};
 
     fn make_config(mappings: Vec<MappingDef>) -> ProjectConfig {
         ProjectConfig {
@@ -103,6 +150,8 @@ mod tests {
             source: SourceLocator {
                 path: "src/auth/**/*.ts".to_string(),
                 lines: None,
+                anchor: None,
+                anchor_context: None,
             },
             asset: "doc".to_string(),
             segment: None,
@@ -122,7 +171,7 @@ mod tests {
             }],
         }];
 
-        let hits = engine.resolve(&changes);
+        let hits = engine.resolve(&changes, Path::new("."));
         assert_eq!(hits.len(), 1);
         assert_eq!(hits[0].mapping_id, "m1");
     }
@@ -134,6 +183,8 @@ mod tests {
             source: SourceLocator {
                 path: "src/auth/login.ts".to_string(),
                 lines: Some([10, 45]),
+                anchor: None,
+                anchor_context: None,
             },
             asset: "doc".to_string(),
             segment: None,
@@ -154,7 +205,7 @@ mod tests {
                 end_line: 40,
             }],
         }];
-        let hits = engine.resolve(&changes);
+        let hits = engine.resolve(&changes, Path::new("."));
         assert_eq!(hits.len(), 1);
 
         // 不重叠的 hunk
@@ -166,7 +217,7 @@ mod tests {
                 end_line: 60,
             }],
         }];
-        let hits = engine.resolve(&changes);
+        let hits = engine.resolve(&changes, Path::new("."));
         assert_eq!(hits.len(), 0);
     }
 
@@ -177,6 +228,8 @@ mod tests {
             source: SourceLocator {
                 path: "src/auth/**/*.ts".to_string(),
                 lines: None,
+                anchor: None,
+                anchor_context: None,
             },
             asset: "doc".to_string(),
             segment: None,
@@ -192,7 +245,7 @@ mod tests {
             change_type: ChangeType::Modified,
             hunks: vec![],
         }];
-        let hits = engine.resolve(&changes);
+        let hits = engine.resolve(&changes, Path::new("."));
         assert_eq!(hits.len(), 0);
     }
 }

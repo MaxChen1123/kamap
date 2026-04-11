@@ -41,12 +41,32 @@ kamap asset add \
 ### Create a Mapping
 
 ```bash
+# Use a semantic anchor to map precisely to a function/class (recommended)
+kamap mapping add \
+  --source src/api/handler.rs \
+  --asset api-doc \
+  --anchor 'fn handle_request' \
+  --reason 'Request handler function' \
+  --apply
+
+# Use anchor-context for disambiguation (when multiple matches exist)
+kamap mapping add \
+  --source src/api/handler.rs \
+  --asset api-doc \
+  --anchor 'fn new' \
+  --anchor-context 'impl RequestHandler' \
+  --reason 'Constructor' \
+  --apply
+
+# Whole-file mapping (for small files or config files)
 kamap mapping add \
   --source 'src/api/**/*.rs' \
   --asset api-doc \
   --reason 'API implementation code' \
   --apply
 ```
+
+> **Semantic anchors** (`--anchor`) are the recommended mapping method introduced in kamap v0.2. Unlike static line ranges (`--lines`), anchors dynamically resolve to the actual location of the target function/class/block, making them resilient to code refactoring. `--lines` is still supported but not recommended.
 
 ### Scan for Impacts
 

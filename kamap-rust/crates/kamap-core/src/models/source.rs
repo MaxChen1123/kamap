@@ -5,9 +5,17 @@ use serde::{Deserialize, Serialize};
 pub struct SourceLocator {
     /// 文件路径，支持 glob 模式
     pub path: String,
-    /// 可选行范围 [start, end]
+    /// 可选行范围 [start, end]（静态，不推荐，anchor 优先）
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub lines: Option<[u32; 2]>,
+    /// 语义锚点：用于在文件中定位代码块的文本特征（如 "fn login"、"class AuthService"）
+    /// scan 时会在当前版本文件中动态解析出实际行范围，避免行号漂移问题。
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub anchor: Option<String>,
+    /// 锚点上下文：用于消歧的外层作用域文本（如 "impl Token"）
+    /// 当文件中存在多个同名 anchor 时，先定位 anchor_context 块，再在其中查找 anchor。
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub anchor_context: Option<String>,
 }
 
 /// Git 变更类型

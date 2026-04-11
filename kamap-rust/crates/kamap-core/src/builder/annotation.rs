@@ -176,6 +176,8 @@ fn parse_annotation(content: &str, file_path: &str, line: u32) -> Option<Mapping
         source: SourceLocator {
             path: file_path.to_string(),
             lines: Some([line, line + 10]), // 估算范围
+            anchor: None,
+            anchor_context: None,
         },
         asset_id,
         reason: reason.unwrap_or_else(|| format!("@kamap annotation at {}:{}", file_path, line)),

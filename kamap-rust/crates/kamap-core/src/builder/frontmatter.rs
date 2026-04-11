@@ -137,7 +137,7 @@ fn parse_frontmatter_item(
     });
 
     Some(MappingCandidate {
-        source: SourceLocator { path, lines },
+        source: SourceLocator { path, lines, anchor: None, anchor_context: None },
         asset_id: doc_path.to_string(), // 反向映射：文档自己是资产
         reason,
         confidence: 0.85,

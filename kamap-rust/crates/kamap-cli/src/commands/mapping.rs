@@ -58,9 +58,15 @@ pub struct AddArgs {
     /// Reason
     #[arg(long)]
     pub reason: Option<String>,
-    /// Line range (e.g., "10-45")
+    /// Line range (e.g., "10-45") — static, not recommended; prefer --anchor
     #[arg(long)]
     pub lines: Option<String>,
+    /// Semantic anchor: text pattern to locate the code block (e.g., "fn login", "class AuthService")
+    #[arg(long)]
+    pub anchor: Option<String>,
+    /// Anchor context: outer scope for disambiguation (e.g., "impl Token")
+    #[arg(long)]
+    pub anchor_context: Option<String>,
     /// Action
     #[arg(long)]
     pub action: Option<String>,
@@ -215,6 +221,8 @@ fn run_add(args: AddArgs, config_path: Option<&str>, shared: bool) -> Result<()>
         source: SourceLocator {
             path: args.source.clone(),
             lines,
+            anchor: args.anchor.clone(),
+            anchor_context: args.anchor_context.clone(),
         },
         asset: args.asset.clone(),
         segment: None,
@@ -293,6 +301,10 @@ fn run_add_batch(args: AddBatchArgs, config_path: Option<&str>, shared: bool) ->
         #[serde(default)]
         source_lines: Option<[u32; 2]>,
         #[serde(default)]
+        anchor: Option<String>,
+        #[serde(default)]
+        anchor_context: Option<String>,
+        #[serde(default)]
         segment: Option<serde_json::Value>,
         #[serde(default)]
         action: Option<String>,
@@ -307,6 +319,8 @@ fn run_add_batch(args: AddBatchArgs, config_path: Option<&str>, shared: bool) ->
             source: SourceLocator {
                 path: m.source_path,
                 lines: m.source_lines,
+                anchor: m.anchor,
+                anchor_context: m.anchor_context,
             },
             asset: m.asset_id,
             segment: m.segment,
@@ -405,15 +419,22 @@ fn run_list(args: ListArgs, config_path: Option<&str>) -> Result<()> {
         }
         println!("Mappings ({}):\n", mappings.len());
         for m in &mappings {
-            let lines_str = m
-                .source
-                .lines
-                .map(|l| format!(":{}-{}", l[0], l[1]))
-                .unwrap_or_default();
+            let scope_str = if let Some(ref anchor) = m.source.anchor {
+                if let Some(ref ctx) = m.source.anchor_context {
+                    format!(" @[{} > {}]", ctx, anchor)
+                } else {
+                    format!(" @[{}]", anchor)
+                }
+            } else {
+                m.source
+                    .lines
+                    .map(|l| format!(":{}-{}", l[0], l[1]))
+                    .unwrap_or_default()
+            };
             println!(
                 "  {} {} → asset:{}",
                 m.id,
-                format!("{}{}", m.source.path, lines_str),
+                format!("{}{}", m.source.path, scope_str),
                 m.asset
             );
             if let Some(ref reason) = m.reason {
