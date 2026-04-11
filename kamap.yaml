@@ -11,6 +11,10 @@ assets:
   provider: localfs
   type: markdown
   target: README_en.md
+- id: kamap-rust-readme
+  provider: localfs
+  type: markdown
+  target: kamap-rust/README.md
 mappings:
 - id: map_d88c84fb
   source:
@@ -270,6 +274,267 @@ mappings:
   _meta:
     origin: ai-generated
     added_at: 2026-04-11T16:49:59.856511+00:00
+- id: map_b174bd6b
+  source:
+    path: kamap-rust/Cargo.toml
+  asset: kamap-rust-readme
+  reason: workspace 配置和依赖版本，README 项目架构章节引用
+  action: review
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-11T17:39:27.604830+00:00
+- id: map_05cb2f46
+  source:
+    path: kamap-rust/crates/kamap-cli/src/main.rs
+  asset: kamap-rust-readme
+  reason: CLI 入口和子命令注册，README 命令参考章节
+  action: review
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-11T17:39:27.604832+00:00
+- id: map_4c57229d
+  source:
+    path: kamap-rust/crates/kamap-cli/src/commands/mod.rs
+  asset: kamap-rust-readme
+  reason: 双配置加载逻辑和插件注册表，README 双配置设计章节
+  action: review
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-11T17:39:27.604833+00:00
+- id: map_016e49a9
+  source:
+    path: kamap-rust/crates/kamap-cli/src/commands/init.rs
+  asset: kamap-rust-readme
+  reason: init 命令实现，对应 README kamap init 章节
+  action: update
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-11T17:39:27.604834+00:00
+- id: map_d09eceed
+  source:
+    path: kamap-rust/crates/kamap-cli/src/commands/scan.rs
+    anchor: fn run_scan
+  asset: kamap-rust-readme
+  reason: scan 主流程实现，对应 README kamap scan 章节
+  action: update
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-11T17:39:27.604835+00:00
+- id: map_3c925ead
+  source:
+    path: kamap-rust/crates/kamap-cli/src/commands/scan.rs
+    anchor: fn run_ack
+  asset: kamap-rust-readme
+  reason: scan ack 子命令实现，对应 README kamap scan ack 章节
+  action: update
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-11T17:39:27.604836+00:00
+- id: map_751d2d27
+  source:
+    path: kamap-rust/crates/kamap-cli/src/commands/check.rs
+  asset: kamap-rust-readme
+  reason: check 命令实现，对应 README kamap check 章节
+  action: update
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-11T17:39:27.604838+00:00
+- id: map_610f6fa5
+  source:
+    path: kamap-rust/crates/kamap-cli/src/commands/explain.rs
+  asset: kamap-rust-readme
+  reason: explain 命令实现，对应 README kamap explain 章节
+  action: update
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-11T17:39:27.604839+00:00
+- id: map_dc7e3fbc
+  source:
+    path: kamap-rust/crates/kamap-cli/src/commands/describe.rs
+  asset: kamap-rust-readme
+  reason: describe 命令实现，对应 README kamap describe 章节
+  action: update
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-11T17:39:27.604840+00:00
+- id: map_7b2b60c5
+  source:
+    path: kamap-rust/crates/kamap-cli/src/commands/mapping.rs
+  asset: kamap-rust-readme
+  reason: mapping 子命令实现，对应 README kamap mapping 章节
+  action: update
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-11T17:39:27.604841+00:00
+- id: map_ae9cdcb4
+  source:
+    path: kamap-rust/crates/kamap-cli/src/commands/asset.rs
+  asset: kamap-rust-readme
+  reason: asset 子命令实现，对应 README kamap asset 章节
+  action: update
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-11T17:39:27.604842+00:00
+- id: map_d767010c
+  source:
+    path: kamap-rust/crates/kamap-cli/src/commands/index.rs
+  asset: kamap-rust-readme
+  reason: index 子命令实现，对应 README kamap index 章节
+  action: update
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-11T17:39:27.604843+00:00
+- id: map_aae17698
+  source:
+    path: kamap-rust/crates/kamap-cli/src/commands/plugin.rs
+  asset: kamap-rust-readme
+  reason: plugin 子命令实现，对应 README kamap plugin 章节
+  action: update
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-11T17:39:27.604843+00:00
+- id: map_d0e7cbb4
+  source:
+    path: kamap-rust/crates/kamap-core/src/config/schema.rs
+  asset: kamap-rust-readme
+  reason: ProjectConfig 结构定义，对应 README 配置文件格式章节
+  action: update
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-11T17:39:27.604845+00:00
+- id: map_7c011643
+  source:
+    path: kamap-rust/crates/kamap-core/src/config/manager.rs
+  asset: kamap-rust-readme
+  reason: 配置管理器（合并、文件锁），对应 README 双配置设计章节
+  action: review
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-11T17:39:27.604846+00:00
+- id: map_cc54073f
+  source:
+    path: kamap-rust/crates/kamap-core/src/anchor/resolver.rs
+    anchor: pub fn resolve_anchor
+  asset: kamap-rust-readme
+  reason: anchor 核心解析算法，对应 README 语义锚点章节
+  action: update
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-11T17:39:27.604847+00:00
+- id: map_26684086
+  source:
+    path: kamap-rust/crates/kamap-core/src/mapping/engine.rs
+    anchor: fn resolve_effective_range
+  asset: kamap-rust-readme
+  reason: anchor 集成到映射引擎的优先级逻辑，对应 README 语义锚点优先级说明
+  action: update
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-11T17:39:27.604848+00:00
+- id: map_76b46580
+  source:
+    path: kamap-rust/crates/kamap-core/src/mapping/engine.rs
+    anchor: pub fn resolve
+    anchor_context: impl MappingEngine
+  asset: kamap-rust-readme
+  reason: 映射匹配主逻辑（glob + anchor + hunk overlap），README 工作流程说明
+  action: update
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-11T17:39:27.604849+00:00
+- id: map_986f83cf
+  source:
+    path: kamap-rust/crates/kamap-core/src/ack/store.rs
+  asset: kamap-rust-readme
+  reason: scan ack 确认状态管理，对应 README scan ack 和 to-ack.json 说明
+  action: update
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-11T17:39:27.604850+00:00
+- id: map_786e7680
+  source:
+    path: kamap-rust/crates/kamap-core/src/analyzer/impact.rs
+  asset: kamap-rust-readme
+  reason: 影响分析器，README 工作流程中的影响分析步骤
+  action: review
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-11T17:39:27.604851+00:00
+- id: map_8abcb010
+  source:
+    path: kamap-rust/crates/kamap-core/src/git/diff.rs
+    anchor: pub fn analyze
+    anchor_context: impl DiffAnalyzer
+  asset: kamap-rust-readme
+  reason: Git diff 分析入口，含 workdir 模式，对应 README scan 默认参数说明
+  action: update
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-11T17:39:27.604852+00:00
+- id: map_c3d71491
+  source:
+    path: kamap-rust/crates/kamap-core/src/models/source.rs
+    anchor: pub struct SourceLocator
+  asset: kamap-rust-readme
+  reason: SourceLocator 含 anchor/anchor_context 字段，对应 README 配置格式中的 source 结构
+  action: update
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-11T17:39:27.604853+00:00
+- id: map_98648a3f
+  source:
+    path: kamap-rust/crates/kamap-core/src/models/mapping.rs
+  asset: kamap-rust-readme
+  reason: 映射定义模型（MappingDef/Action/MergeStrategy），对应 README 映射管理章节
+  action: review
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-11T17:39:27.604854+00:00
+- id: map_6b5e9715
+  source:
+    path: kamap-rust/crates/kamap-core/src/models/asset.rs
+  asset: kamap-rust-readme
+  reason: 资产定义模型（AssetDef/HealthStatus），对应 README 资产管理章节
+  action: review
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-11T17:39:27.604855+00:00
+- id: map_3213399b
+  source:
+    path: kamap-rust/crates/kamap-core/src/models/impact.rs
+  asset: kamap-rust-readme
+  reason: 影响报告模型（Impact/Severity/ImpactReport），对应 README 核心概念
+  action: review
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-11T17:39:27.604856+00:00
+- id: map_b7bdb84d
+  source:
+    path: kamap-rust/crates/kamap-plugin-localfs/src/lib.rs
+  asset: kamap-rust-readme
+  reason: localfs 插件实现，对应 README 内置插件 localfs 章节
+  action: update
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-11T17:39:27.604857+00:00
+- id: map_3bc44624
+  source:
+    path: kamap-rust/crates/kamap-plugin-sqlite/src/lib.rs
+  asset: kamap-rust-readme
+  reason: sqlite 插件实现，对应 README 内置插件 sqlite 章节
+  action: update
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-11T17:39:27.604858+00:00
+- id: map_791a84fd
+  source:
+    path: kamap-rust/crates/kamap-core/src/plugin/protocol.rs
+  asset: kamap-rust-readme
+  reason: 插件协议定义（AssetPlugin trait/Capabilities），对应 README 插件能力说明
+  action: review
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-11T17:39:27.604859+00:00
 policies: []
 discovery:
   annotation:

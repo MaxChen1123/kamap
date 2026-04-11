@@ -7,8 +7,10 @@
 | 概念 | 说明 |
 |------|------|
 | **Asset（资产）** | 需要与代码保持同步的知识资产，如文档、数据库、配置文件等 |
-| **Mapping（映射）** | 源代码路径/行范围与资产之间的关联关系 |
+| **Mapping（映射）** | 源代码路径/行范围/语义锚点与资产之间的关联关系 |
+| **Anchor（锚点）** | 语义锚点，通过文本特征（如 `fn login`、`class AuthService`）动态定位代码块，避免行号漂移问题 |
 | **Impact（影响）** | 当代码变更命中映射规则时产生的影响报告 |
+| **Ack（确认）** | 开发者确认已同步文档后的标记，避免重复提醒 |
 | **Plugin（插件）** | 不同资产类型的处理器，负责健康检查、内容读取、元信息获取等 |
 | **Policy（策略）** | 定义影响的严重程度规则 |
 
@@ -21,11 +23,17 @@ kamap init
 # 2. 注册资产
 kamap asset add --id my-doc --provider localfs --type markdown --target docs/my-doc.md --apply
 
-# 3. 添加映射
+# 3. 添加映射（整文件）
 kamap mapping add --source 'src/**/*.rs' --asset my-doc --reason '实现代码' --apply
 
-# 4. 扫描影响
+# 3b. 添加映射（使用语义锚点定位特定代码块）
+kamap mapping add --source src/auth.rs --asset my-doc --anchor 'fn login' --reason '登录逻辑' --apply
+
+# 4. 扫描影响（默认对比最近一次提交与工作区）
 kamap scan
+
+# 5. 确认已同步的影响
+kamap scan ack --all
 ```
 
 ## 项目结构
@@ -34,7 +42,8 @@ kamap scan
 kamap.yaml           # 共享配置文件（团队/仓库共用，提交到 Git）
 .kamap.yaml          # 个人配置文件（开发者私有，不提交到 Git）
 .kamap/              # 工作目录
-  └── index.db       # SQLite 运行时索引
+  ├── index.db       # SQLite 运行时索引
+  └── to-ack.json    # scan 结果与确认状态（绑定到 HEAD commit）
 ```
 
 ### 双配置文件设计
@@ -69,23 +78,45 @@ kamap init --output json
 
 ### `kamap scan`
 
-扫描 Git 变更，匹配映射规则，生成影响报告。
+扫描 Git 变更，匹配映射规则，生成影响报告。默认对比最近一次提交（HEAD）与工作区（含 staged + unstaged），即检测"当前未提交的改动"影响了哪些文档。
 
 ```bash
-kamap scan                              # 默认对比 origin/main..HEAD
-kamap scan --base main --head HEAD      # 指定 Git ref
+kamap scan                              # 默认对比 HEAD..workdir
+kamap scan --base origin/main           # 对比 origin/main..workdir
+kamap scan --base main --head HEAD      # 对比 main..HEAD（仅已提交的变更）
 kamap scan -o json                      # JSON 输出
-kamap scan --config path/to/kamap.yaml # 指定配置文件
+kamap scan --config path/to/kamap.yaml  # 指定配置文件
 ```
 
 | 参数 | 默认值 | 说明 |
 |------|--------|------|
-| `--base` | `origin/main` | 基准 Git ref |
-| `--head` | `HEAD` | 目标 Git ref |
+| `--base` | `HEAD` | 基准 Git ref |
+| `--head` | `workdir` | 目标 Git ref，`workdir` 表示工作区（含 staged + unstaged） |
 | `--output` / `-o` | `text` | 输出格式 |
 | `--config` | 自动查找 | 配置文件路径 |
 
-**工作流程**: Git diff → 映射引擎匹配 → 影响分析 → 输出报告
+**工作流程**: Git diff → 映射引擎匹配（含 anchor 动态解析）→ 影响分析 → 过滤已确认项 → 写入 `.kamap/to-ack.json` → 输出报告
+
+扫描结果会自动写入 `.kamap/to-ack.json`，记录每个影响的确认状态。同一 HEAD commit 下已确认的影响不会重复显示。
+
+---
+
+### `kamap scan ack`
+
+确认影响已处理（文档已同步），标记 `.kamap/to-ack.json` 中的条目为已确认。下次在同一 HEAD 上扫描时，已确认的影响将被过滤。
+
+```bash
+kamap scan ack --all                    # 确认所有待处理影响
+kamap scan ack --ids map_abc123,map_def456  # 确认指定映射 ID
+kamap scan ack --all -o json            # JSON 输出
+```
+
+| 参数 | 说明 |
+|------|------|
+| `--all` | 确认所有待处理影响 |
+| `--ids` | 逗号分隔的映射 ID 列表 |
+| `--output` / `-o` | 输出格式（默认 `text`） |
+| `--config` | 配置文件路径 |
 
 ---
 
@@ -95,13 +126,13 @@ kamap scan --config path/to/kamap.yaml # 指定配置文件
 
 ```bash
 kamap check
-kamap check --base main --head feature-branch -o json
+kamap check --base origin/main --head HEAD -o json
 ```
 
 | 参数 | 默认值 | 说明 |
 |------|--------|------|
-| `--base` | `origin/main` | 基准 Git ref |
-| `--head` | `HEAD` | 目标 Git ref |
+| `--base` | `HEAD` | 基准 Git ref |
+| `--head` | `workdir` | 目标 Git ref，`workdir` 表示工作区 |
 | `--output` / `-o` | `text` | 输出格式 |
 | `--config` | 自动查找 | 配置文件路径 |
 
@@ -142,16 +173,45 @@ kamap describe -o text      # 文本格式
 
 #### `kamap mapping add`
 
-添加单个映射。默认 dry-run 模式，需 `--apply` 才实际写入。
+添加单个映射。默认 dry-run 模式，需 `--apply` 才实际写入。默认写入个人配置（`.kamap.yaml`），使用 `--shared` 写入共享配置（`kamap.yaml`）。
 
 ```bash
+# 整文件映射
 kamap mapping add \
   --source 'src/auth/**/*.ts' \
   --asset auth-doc \
   --reason '认证模块实现' \
-  --lines '10-45' \
   --action review \
   --apply
+
+# 语义锚点映射（推荐，避免行号漂移）
+kamap mapping add \
+  --source src/auth.rs \
+  --asset auth-doc \
+  --anchor 'fn login' \
+  --reason '登录函数实现' \
+  --action update \
+  --apply
+
+# 带锚点上下文消歧（文件中有多个同名 fn new 时）
+kamap mapping add \
+  --source src/auth.rs \
+  --asset token-doc \
+  --anchor 'fn new' \
+  --anchor-context 'impl Token' \
+  --reason 'Token 构造函数' \
+  --action update \
+  --apply
+
+# 静态行范围（不推荐，行号会漂移）
+kamap mapping add \
+  --source src/auth.ts \
+  --asset auth-doc \
+  --lines '10-45' \
+  --apply
+
+# 写入共享配置
+kamap mapping add --source src/main.rs --asset readme --shared --apply
 ```
 
 | 参数 | 必填 | 说明 |
@@ -159,13 +219,16 @@ kamap mapping add \
 | `--source` | 是 | 源文件路径或 glob 模式 |
 | `--asset` | 是 | 目标 Asset ID |
 | `--reason` | 否 | 映射原因 |
-| `--lines` | 否 | 行范围，如 `"10-45"` |
+| `--anchor` | 否 | 语义锚点文本（如 `"fn login"`），用于动态定位代码块 |
+| `--anchor-context` | 否 | 锚点上下文文本（如 `"impl Token"`），用于消歧 |
+| `--lines` | 否 | 静态行范围，如 `"10-45"`（不推荐，优先用 anchor） |
 | `--action` | 否 | 推荐动作: `review` / `update` / `verify` / `acknowledge` |
 | `--apply` | 否 | 实际写入（默认 dry-run） |
+| `--shared` | 否 | 写入共享配置 `kamap.yaml`（全局标志） |
 
 #### `kamap mapping add-batch`
 
-从 JSON 批量添加映射（适合 AI 生成）。
+从 JSON 批量添加映射（适合 AI 生成）。默认写入个人配置，使用 `--shared` 写入共享配置。
 
 ```bash
 # 从 stdin
@@ -173,6 +236,9 @@ echo '{"mappings":[...]}' | kamap mapping add-batch --stdin --apply
 
 # 从文件
 kamap mapping add-batch --file mappings.json --apply
+
+# 写入共享配置
+echo '{"mappings":[...]}' | kamap mapping --shared add-batch --stdin --apply
 ```
 
 JSON 输入格式：
@@ -183,12 +249,37 @@ JSON 输入格式：
       "source_path": "src/foo.rs",
       "asset_id": "my-doc",
       "reason": "实现代码",
+      "anchor": "fn handle_request",
+      "anchor_context": "impl Server",
+      "action": "update"
+    },
+    {
+      "source_path": "src/config.rs",
+      "asset_id": "config-doc",
+      "reason": "配置模块（整文件）",
+      "action": "review"
+    },
+    {
+      "source_path": "src/legacy.rs",
+      "asset_id": "legacy-doc",
       "source_lines": [10, 45],
       "segment": {"heading": "Authentication"},
       "action": "review"
     }
   ]
 }
+```
+
+| 字段 | 必填 | 说明 |
+|------|------|------|
+| `source_path` | 是 | 源文件路径或 glob |
+| `asset_id` | 是 | 目标 Asset ID |
+| `reason` | 否 | 映射原因 |
+| `anchor` | 否 | 语义锚点文本（推荐），动态定位代码块 |
+| `anchor_context` | 否 | 锚点上下文，用于消歧 |
+| `source_lines` | 否 | `[start, end]` 静态行范围（不推荐，优先用 anchor） |
+| `segment` | 否 | 资产片段信息（由插件解释） |
+| `action` | 否 | 推荐动作: `review` / `update` / `verify` / `acknowledge` |
 ```
 
 #### `kamap mapping remove`
@@ -259,6 +350,8 @@ kamap mapping export-context -o json
 
 ### `kamap asset` — 资产管理
 
+默认写入个人配置（`.kamap.yaml`），使用 `--shared` 全局标志写入共享配置（`kamap.yaml`）。
+
 #### `kamap asset add`
 
 注册新资产。默认 dry-run 模式。
@@ -270,6 +363,9 @@ kamap asset add \
   --type markdown \
   --target docs/my-doc.md \
   --apply
+
+# 写入共享配置
+kamap asset --shared add --id my-doc --provider localfs --type markdown --target docs/my-doc.md --apply
 ```
 
 | 参数 | 必填 | 说明 |
@@ -279,6 +375,34 @@ kamap asset add \
 | `--type` | 是 | 资产类型（`markdown` / `text` / `config` / `sqlite-db`） |
 | `--target` | 是 | 目标路径 |
 | `--apply` | 否 | 实际写入（默认 dry-run） |
+| `--shared` | 否 | 写入共享配置 `kamap.yaml`（全局标志） |
+
+#### `kamap asset add-batch`
+
+从 JSON 批量注册资产（原子操作，避免并发写入冲突）。
+
+```bash
+# 从 stdin
+echo '{"assets":[
+  {"id":"readme-zh","provider":"localfs","type":"markdown","target":"README.md"},
+  {"id":"readme-en","provider":"localfs","type":"markdown","target":"README_en.md"}
+]}' | kamap asset add-batch --stdin --apply
+
+# 从文件
+kamap asset add-batch --file assets.json --apply
+
+# 写入共享配置
+echo '{"assets":[...]}' | kamap asset --shared add-batch --stdin --apply
+```
+
+JSON 输入格式：
+```json
+{
+  "assets": [
+    {"id": "my-doc", "provider": "localfs", "type": "markdown", "target": "docs/my-doc.md"}
+  ]
+}
+```
 
 #### `kamap asset remove`
 
@@ -449,12 +573,32 @@ assets:
     target: docs/auth.md
 
 mappings:
+  # 整文件映射
   - id: map_abc123
     source:
       path: "src/auth/**/*.rs"
     asset: auth-doc
     reason: "认证模块实现代码"
     action: review
+
+  # 使用语义锚点的映射（推荐）
+  - id: map_def456
+    source:
+      path: src/auth/login.rs
+      anchor: "fn login"
+    asset: auth-doc
+    reason: "登录函数"
+    action: update
+
+  # 使用锚点上下文消歧
+  - id: map_ghi789
+    source:
+      path: src/auth/token.rs
+      anchor: "fn new"
+      anchor_context: "impl Token"
+    asset: auth-doc
+    reason: "Token 构造函数"
+    action: update
 
 policies:
   - match:
@@ -475,16 +619,58 @@ discovery:
 
 ---
 
+## 语义锚点（Anchor）
+
+语义锚点是 kamap 的核心特性之一，解决了静态行号随代码插入/删除而漂移的问题。
+
+### 工作原理
+
+在 `scan` 时，映射引擎对配置了 `anchor` 的映射执行动态解析：
+
+1. 读取源文件当前内容
+2. 在文件中搜索包含 anchor 文本的行
+3. 如果配置了 `anchor_context`，先定位 context 块，再在其中搜索 anchor
+4. 从 anchor 行向上扩展（包含注释、attribute、decorator）
+5. 向下检测代码块边界（花括号匹配 / 缩进检测，自动适配 Rust/Go/JS/Python 等）
+6. 返回动态解析的行范围用于 hunk overlap 检测
+
+### 优先级
+
+映射匹配时行范围的解析优先级：
+
+1. **anchor** → 动态解析行范围（推荐）
+2. **static lines** → 使用配置中的固定行号（不推荐）
+3. **无** → 整文件匹配
+
+### 支持的语言
+
+- **花括号语言**（Rust, Go, JavaScript, TypeScript, Java, C, C++）：通过 `{` `}` 计数确定块边界
+- **缩进语言**（Python, YAML）：通过缩进层级确定块边界
+
+---
+
 ## 项目架构
 
 ```
 kamap-rust/
 ├── crates/
-│   ├── kamap-core/           # 核心库（配置、映射引擎、影响分析、Git diff、存储）
-│   ├── kamap-cli/            # CLI 工具
-│   ├── kamap-mcp/            # MCP 协议支持
-│   ├── kamap-plugin-localfs/ # 本地文件系统插件
-│   └── kamap-plugin-sqlite/  # SQLite 插件
+│   ├── kamap-core/               # 核心库
+│   │   ├── anchor/               # 语义锚点解析器
+│   │   ├── analyzer/             # 影响分析 + 策略评估
+│   │   ├── ack/                  # scan ack 确认状态管理（to-ack.json）
+│   │   ├── builder/              # 映射发现策略（annotation/frontmatter/naming）
+│   │   ├── config/               # 配置管理（双配置合并、文件锁）
+│   │   ├── git/                  # Git diff 分析
+│   │   ├── mapping/              # 映射引擎（glob 匹配 + anchor 解析 + hunk overlap）
+│   │   ├── models/               # 数据模型（Asset, Mapping, Impact, Source 等）
+│   │   ├── output/               # 输出格式化（text/json）
+│   │   ├── plugin/               # 插件协议与注册表
+│   │   └── storage/              # SQLite 索引存储
+│   ├── kamap-cli/                # CLI 工具
+│   │   └── commands/             # 子命令实现（init/scan/check/mapping/asset/...）
+│   ├── kamap-mcp/                # MCP 协议支持（开发中）
+│   ├── kamap-plugin-localfs/     # 本地文件系统插件
+│   └── kamap-plugin-sqlite/      # SQLite 插件
 ```
 
 ## License
