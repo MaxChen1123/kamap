@@ -192,6 +192,84 @@ mappings:
   _meta:
     origin: ai-generated
     added_at: 2026-04-10T11:50:06.946003+00:00
+- id: map_905f7cb6
+  source:
+    path: kamap-rust/crates/kamap-core/src/anchor/resolver.rs
+    anchor: pub fn resolve_anchor
+  asset: readme-zh
+  reason: anchor 核心解析算法，README 中 anchor 功能说明的实现基础
+  action: update
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-11T16:49:59.856496+00:00
+- id: map_477513c4
+  source:
+    path: kamap-rust/crates/kamap-core/src/anchor/resolver.rs
+    anchor: pub fn resolve_anchor
+  asset: readme-en
+  reason: Core anchor resolution algorithm, implementation basis for anchor feature docs
+  action: update
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-11T16:49:59.856500+00:00
+- id: map_23657d99
+  source:
+    path: kamap-rust/crates/kamap-core/src/mapping/engine.rs
+    anchor: fn resolve_effective_range
+  asset: readme-zh
+  reason: anchor 解析集成到映射引擎的调度逻辑，anchor > static lines > whole-file 优先级
+  action: update
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-11T16:49:59.856502+00:00
+- id: map_e7117bcf
+  source:
+    path: kamap-rust/crates/kamap-core/src/mapping/engine.rs
+    anchor: fn resolve_effective_range
+  asset: readme-en
+  reason: 'Anchor resolution integration in mapping engine, priority: anchor > static lines > whole-file'
+  action: update
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-11T16:49:59.856504+00:00
+- id: map_681ee7ab
+  source:
+    path: kamap-rust/crates/kamap-core/src/mapping/index.rs
+  asset: readme-zh
+  reason: 映射索引增加 anchor/anchor_context 字段存储
+  action: review
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-11T16:49:59.856506+00:00
+- id: map_66ec69a1
+  source:
+    path: kamap-rust/crates/kamap-core/src/mapping/index.rs
+  asset: readme-en
+  reason: Mapping index extended with anchor/anchor_context field storage
+  action: review
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-11T16:49:59.856507+00:00
+- id: map_7895f5eb
+  source:
+    path: kamap-rust/crates/kamap-core/src/models/source.rs
+    anchor: pub struct SourceLocator
+  asset: readme-zh
+  reason: SourceLocator 新增 anchor/anchor_context 字段定义
+  action: update
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-11T16:49:59.856509+00:00
+- id: map_c8378856
+  source:
+    path: kamap-rust/crates/kamap-core/src/models/source.rs
+    anchor: pub struct SourceLocator
+  asset: readme-en
+  reason: SourceLocator struct extended with anchor/anchor_context fields
+  action: update
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-11T16:49:59.856511+00:00
 policies: []
 discovery:
   annotation:
