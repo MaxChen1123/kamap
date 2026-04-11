@@ -405,6 +405,9 @@ impl ConfigManager {
         lock_file.unlock()
             .with_context(|| "Failed to release config lock")?;
 
+        // 删除锁文件，避免残留空文件困扰用户
+        let _ = std::fs::remove_file(&lock_file_path);
+
         result?;
         Ok(cm)
     }
