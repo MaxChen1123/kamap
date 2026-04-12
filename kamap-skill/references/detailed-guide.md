@@ -199,7 +199,28 @@ Creates/rebuilds SQLite index at `.kamap/index.db`.
 |-----------|------|----------|---------|-------------|
 | `--output` / `-o` | string | No | `"text"` | Output format |
 
-### kamap plugin (subcommands)
+### kamap provider (subcommands)
+
+**Global flag**: `--config <path>`
+
+#### provider list
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `--output` / `-o` | string | No | `"text"` | Output format |
+
+Lists all providers: built-in (`localfs`, `sqlite`) and custom (defined in config).
+
+#### provider info
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `--name` | string | **Yes** | — | Provider name |
+| `--output` / `-o` | string | No | `"text"` | Output format |
+
+### kamap plugin (subcommands) — deprecated
+
+> **Note**: Use `kamap provider` instead. The `plugin` command is retained for backward compatibility.
 
 #### plugin list
 
@@ -213,6 +234,70 @@ Creates/rebuilds SQLite index at `.kamap/index.db`.
 |-----------|------|----------|---------|-------------|
 | `--name` | string | **Yes** | — | Plugin name |
 | `--output` / `-o` | string | No | `"text"` | Output format |
+
+---
+
+## Provider System (v2)
+
+kamap v2 replaces the old plugin system with a **prompt-driven provider architecture**. Providers define how kamap generates action prompts when code changes impact assets.
+
+### Provider types
+
+| Type | Description | `prompt_template` |
+|------|-------------|-------------------|
+| **builtin** | `localfs`, `sqlite` — shipped with kamap, have default prompts | Optional (override default) |
+| **custom** | User-defined providers (iwiki, notion, etc.) | Required |
+
+### Configuration
+
+Providers are defined in the `providers` section of `kamap.yaml`:
+
+```yaml
+providers:
+  - name: iwiki
+    prompt_template: |
+      代码变更影响了 iwiki 文档「{{asset.meta.title}}」(文档 ID: {{asset.target}})。
+
+      变更来源: {{source.path}}
+      影响原因: {{reason}}
+      建议操作: {{action}}
+
+      请通过 iwiki MCP 完成以下操作：
+      1. 调用 getDocument(docId: "{{asset.target}}") 读取文档当前内容
+      2. 阅读代码变更，判断文档哪些部分需要更新
+      3. 调用 saveDocument 保存修改后的文档
+
+  - name: feishu-doc
+    prompt_template: |
+      代码变更影响了飞书文档「{{asset.meta.title}}」({{asset.target}})。
+      请打开飞书文档进行审查。变更来源: {{source.path}}，原因: {{reason}}
+```
+
+### Template variables
+
+| Variable | Description |
+|----------|-------------|
+| `{{asset.id}}` | Asset ID |
+| `{{asset.target}}` | Asset target (path, URL, doc ID, etc.) |
+| `{{asset.type}}` | Asset type |
+| `{{asset.provider}}` | Provider name |
+| `{{asset.meta.*}}` | Any field in asset's `meta` map |
+| `{{source.path}}` | Source file path with hunk info |
+| `{{source.file}}` | Source file path only |
+| `{{source.hunks}}` | Changed line ranges |
+| `{{reason}}` | Mapping reason |
+| `{{action}}` | Suggested action (review/update/verify/acknowledge) |
+| `{{mapping_id}}` | Mapping ID |
+
+### How scan uses providers
+
+When `kamap scan` detects an impact, it:
+1. Looks up the asset's `provider` name
+2. Finds the matching provider definition in `providers` config
+3. Renders the `prompt_template` (or built-in default prompt) with the impact context
+4. Includes the rendered `action_prompt` string in the scan output
+
+The Agent then reads `action_prompt` and uses whatever tools are appropriate (MCP, Skill, direct file access, etc.) to handle the impact.
 
 ---
 
@@ -284,9 +369,9 @@ discovery:
 
 ---
 
-## Built-in Plugins
+## Built-in Providers
 
-| Plugin | Provider | Asset Types | Capabilities |
-|--------|----------|-------------|-------------|
-| Local File | `localfs` | `markdown`, `text`, `config` | Segment parsing, content reading, health check, metadata, mapping discovery |
-| SQLite | `sqlite` | `sqlite-db` | Segment parsing (table names), health check, metadata |
+| Provider | Asset Types | Default Prompt |
+|----------|-------------|----------------|
+| `localfs` | `markdown`, `text`, `config` | "请直接读取 {target} 并根据代码变更进行更新" |
+| `sqlite` | `sqlite-db` | "请检查是否需要更新 schema 或数据" |

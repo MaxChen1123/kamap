@@ -535,6 +535,33 @@ mappings:
   _meta:
     origin: ai-generated
     added_at: 2026-04-11T17:39:27.604859+00:00
+- id: map_28d7d74d
+  source:
+    path: kamap-rust/crates/kamap-cli/src/commands/provider.rs
+  asset: kamap-rust-readme
+  reason: provider 子命令实现，对应 README provider 管理章节
+  action: update
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-12T15:14:47.416841+00:00
+- id: map_9ce86627
+  source:
+    path: kamap-rust/crates/kamap-core/src/provider/prompt.rs
+  asset: kamap-rust-readme
+  reason: Provider prompt 渲染核心，对应 README Provider 系统章节
+  action: update
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-12T15:14:47.416843+00:00
+- id: map_725c405e
+  source:
+    path: kamap-rust/crates/kamap-core/src/provider/mod.rs
+  asset: kamap-rust-readme
+  reason: Provider 模块入口
+  action: review
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-12T15:14:47.416844+00:00
 policies: []
 discovery:
   annotation:

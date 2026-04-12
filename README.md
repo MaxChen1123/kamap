@@ -124,7 +124,28 @@ kamap mapping add \
 kamap scan
 ```
 
-扫描当前 Git 变更，输出受影响的知识资产列表。在 CI 中可使用 `kamap check`，存在 error 级别影响时会返回非零退出码。
+扫描当前 Git 变更，输出受影响的知识资产列表。每个影响包含 `action_prompt` 字段，提供具体的操作指引（由 Provider 生成）。在 CI 中可使用 `kamap check`，存在 error 级别影响时会返回非零退出码。
+
+### Provider 系统
+
+Provider 定义了 kamap 在检测到影响时如何生成操作指引（`action_prompt`）。内置 provider（`localfs`、`sqlite`）有默认 prompt；可通过 `kamap.yaml` 中的 `providers` 配置自定义 provider（如 iwiki、notion），并通过 `prompt_template` 定义操作指引模板：
+
+```yaml
+providers:
+  - name: iwiki
+    prompt_template: |
+      代码变更影响了 iwiki 文档「{{asset.meta.title}}」(文档 ID: {{asset.target}})。
+      请通过 iwiki MCP 读取并更新文档。
+```
+
+查看已注册的 provider：
+
+```bash
+kamap provider list
+kamap provider info --name localfs
+```
+
+> `kamap plugin` 命令已废弃，请使用 `kamap provider` 替代。
 
 ## 详细文档
 

@@ -4,6 +4,7 @@ use anyhow::Result;
 
 use crate::config::ProjectConfig;
 use crate::models::*;
+use crate::provider::{default_provider, render_action_prompt, resolve_provider, PromptContext};
 
 use super::policy::evaluate_severity;
 
@@ -57,6 +58,20 @@ impl ImpactAnalyzer {
                 detail: Some(s.clone()),
             });
 
+            // 渲染 action prompt
+            let provider_def = resolve_provider(&config.providers, &asset.provider)
+                .cloned()
+                .unwrap_or_else(|| default_provider(&asset.provider));
+
+            let prompt_ctx = PromptContext {
+                asset: &asset,
+                source: &hit.source_match,
+                reason: &reason,
+                action: &suggested_action,
+                mapping_id: &hit.mapping_id,
+            };
+            let action_prompt = render_action_prompt(&provider_def, &prompt_ctx);
+
             impacts.push(Impact {
                 asset,
                 source: hit.source_match.clone(),
@@ -67,6 +82,7 @@ impl ImpactAnalyzer {
                 confidence,
                 suggested_action,
                 severity,
+                action_prompt: Some(action_prompt),
             });
         }
 

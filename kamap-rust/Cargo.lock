@@ -563,7 +563,7 @@ dependencies = [
 
 [[package]]
 name = "kamap-cli"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "anyhow",
  "chrono",
@@ -581,7 +581,7 @@ dependencies = [
 
 [[package]]
 name = "kamap-core"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "anyhow",
  "chrono",
@@ -600,7 +600,7 @@ dependencies = [
 
 [[package]]
 name = "kamap-mcp"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "anyhow",
  "kamap-core",
@@ -611,7 +611,7 @@ dependencies = [
 
 [[package]]
 name = "kamap-plugin-localfs"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "anyhow",
  "chrono",
@@ -624,7 +624,7 @@ dependencies = [
 
 [[package]]
 name = "kamap-plugin-sqlite"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "anyhow",
  "kamap-core",

@@ -259,6 +259,15 @@ impl ConfigManager {
             (Some(s), Some(l)) => {
                 let mut merged = s.clone();
 
+                // providers: 追加 local 中 shared 没有的，同 name 则 local 覆盖
+                for lp in &l.providers {
+                    if let Some(existing) = merged.providers.iter_mut().find(|p| p.name == lp.name) {
+                        *existing = lp.clone();
+                    } else {
+                        merged.providers.push(lp.clone());
+                    }
+                }
+
                 // plugins: 追加 local 中 shared 没有的插件
                 for lp in &l.plugins {
                     if !merged.plugins.iter().any(|p| p.name == lp.name) {
@@ -416,6 +425,7 @@ impl ConfigManager {
 
     /// 从合并后的 config 中减去另一层的原始内容，得到当前层的增量。
     ///
+    /// - providers: 移除 other 中已有的（按 name 匹配且 prompt_template 相同）
     /// - plugins: 移除 other 中已有的插件
     /// - assets: 移除与 other 中完全相同的资产（同 ID 同内容），保留新增或修改的
     /// - mappings: 同上
@@ -423,6 +433,11 @@ impl ConfigManager {
     /// - discovery: 如果与 other 相同则使用默认值，否则保留
     fn subtract_layer(merged: &ProjectConfig, other: &ProjectConfig) -> ProjectConfig {
         let mut result = merged.clone();
+
+        // providers: 移除 other 中已有的（按 name 匹配且 prompt_template 相同）
+        result.providers.retain(|p| {
+            !other.providers.iter().any(|op| op.name == p.name && op.prompt_template == p.prompt_template)
+        });
 
         // plugins: 移除 other 中已有的（按 name 匹配）
         result.plugins.retain(|p| !other.plugins.iter().any(|op| op.name == p.name));

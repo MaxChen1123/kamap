@@ -36,6 +36,9 @@ pub struct Impact {
     pub confidence: f32,
     pub suggested_action: Action,
     pub severity: Severity,
+    /// Provider 生成的操作指引 prompt（v2 新增）
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub action_prompt: Option<String>,
 }
 
 /// 扫描元信息

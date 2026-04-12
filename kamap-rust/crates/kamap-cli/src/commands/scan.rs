@@ -149,10 +149,12 @@ fn print_json_report(
                 "mapping_id": i.mapping_id,
                 "asset_id": i.asset.id,
                 "asset_target": i.asset.target,
+                "provider": i.asset.provider,
                 "source": source_path_str(&i.source),
                 "reason": i.reason,
                 "action": format_action_tag(&i.suggested_action),
                 "severity": format!("{:?}", i.severity).to_lowercase(),
+                "action_prompt": i.action_prompt,
             })
         })
         .collect();
@@ -207,6 +209,14 @@ fn print_text_report(
         );
         println!("      mapping: {}  asset: {}", impact.mapping_id, impact.asset.id);
         println!("      reason:  {}", impact.reason);
+        if impact.asset.provider != "localfs" {
+            if let Some(ref prompt) = impact.action_prompt {
+                println!("      action_prompt:");
+                for line in prompt.lines() {
+                    println!("        {}", line);
+                }
+            }
+        }
         println!();
     }
 

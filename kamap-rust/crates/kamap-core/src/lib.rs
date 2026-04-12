@@ -6,6 +6,7 @@ pub mod anchor;
 pub mod analyzer;
 pub mod builder;
 pub mod plugin;
+pub mod provider;
 pub mod storage;
 pub mod output;
 pub mod ack;

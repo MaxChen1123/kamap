@@ -7,6 +7,7 @@ pub mod mapping;
 pub mod asset;
 pub mod index;
 pub mod plugin;
+pub mod provider;
 
 use std::path::{Path, PathBuf};
 

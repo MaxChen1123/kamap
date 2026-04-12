@@ -256,23 +256,82 @@ Output machine-readable tool description (default output: json):
 {SKILL_DIR}/bin/kamap describe --output json
 ```
 
-### 8. Plugin Management (plugin)
+### 8. Provider Management (provider)
+
+Providers define how kamap generates action prompts when impacts are detected. Built-in providers (`localfs`, `sqlite`) have default prompts; custom providers use user-defined prompt templates.
+
+```bash
+{SKILL_DIR}/bin/kamap provider list --output json
+{SKILL_DIR}/bin/kamap provider info --name localfs --output json
+```
+
+### 9. Plugin Management (plugin) — deprecated
+
+> **Note**: The `plugin` command is deprecated. Use `provider` instead.
 
 ```bash
 {SKILL_DIR}/bin/kamap plugin list --output json
 {SKILL_DIR}/bin/kamap plugin info --name localfs --output json
 ```
 
+## Provider System (v2)
+
+kamap v2 introduces a **prompt-driven provider architecture**. Instead of kamap directly reading/writing remote assets, it generates **action prompts** that tell the Agent how to handle each impacted asset.
+
+### How it works
+
+1. `kamap scan` detects code changes and identifies impacted assets
+2. For each impact, kamap looks up the asset's provider and renders an **action_prompt**
+3. The `action_prompt` is included in the scan JSON output
+4. The Agent reads the prompt and uses whatever tools are appropriate (MCP, Skill, direct file access, etc.)
+
+### Scan output with action_prompt
+
+Each impact in `kamap scan --output json` now includes an `action_prompt` field:
+
+```json
+{
+  "mapping_id": "map_xxx",
+  "asset_id": "auth-design-doc",
+  "provider": "iwiki",
+  "action_prompt": "代码变更影响了 iwiki 文档「认证模块设计文档」(文档 ID: 12345678)...",
+  "action": "update",
+  "reason": "登录函数实现变更"
+}
+```
+
+### Configuring custom providers
+
+Define providers in `kamap.yaml` with a `prompt_template`:
+
+```yaml
+providers:
+  - name: iwiki
+    prompt_template: |
+      代码变更影响了 iwiki 文档「{{asset.meta.title}}」(文档 ID: {{asset.target}})。
+
+      变更来源: {{source.path}}
+      影响原因: {{reason}}
+      建议操作: {{action}}
+
+      请通过 iwiki MCP 完成以下操作：
+      1. 调用 getDocument(docId: "{{asset.target}}") 读取文档当前内容
+      2. 阅读代码变更，判断文档哪些部分需要更新
+      3. 调用 saveDocument 保存修改后的文档
+```
+
+Template variables: `{{asset.id}}`, `{{asset.target}}`, `{{asset.type}}`, `{{asset.provider}}`, `{{asset.meta.*}}`, `{{source.path}}`, `{{source.file}}`, `{{source.hunks}}`, `{{reason}}`, `{{action}}`, `{{mapping_id}}`.
+
+Built-in providers (`localfs`, `sqlite`) have default prompts and don't need `prompt_template`.
+
 ## Recommended Workflows
 
 ### Workflow A: Post-Coding Document Sync
 
 1. After code changes, run `{SKILL_DIR}/bin/kamap scan --output json`
-2. Based on the `action` field in scan results:
-   - `update`: Directly update the corresponding document
-   - `review`: Review whether the document needs updating
-   - `verify`: Verify document-code consistency
-   - `acknowledge`: Note the change but no document update needed
+2. For each impact, read the `action_prompt` field:
+   - **For localfs assets**: directly read and update the local file as indicated
+   - **For custom provider assets** (iwiki, notion, etc.): follow the `action_prompt` instructions, which may involve calling MCP tools, Skills, or other methods
 3. After handling each impact, acknowledge it:
    ```bash
    # Acknowledge specific impacts by mapping ID

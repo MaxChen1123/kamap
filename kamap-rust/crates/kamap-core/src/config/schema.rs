@@ -2,7 +2,22 @@ use serde::{Deserialize, Serialize};
 
 use crate::models::{AssetDef, MappingDef};
 
-/// 插件定义
+/// Provider 定义（v2 新增）
+///
+/// Provider 定义了 kamap 在检测到影响时如何生成操作指引。
+/// - 内置 provider（localfs、sqlite）无需 prompt_template，有默认 prompt
+/// - 自定义 provider（iwiki、notion 等）通过 prompt_template 定义操作指引模板
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ProviderDef {
+    pub name: String,
+    /// prompt 模板，支持 {{asset.id}}、{{asset.target}}、{{asset.meta.xxx}}、
+    /// {{source.path}}、{{reason}}、{{action}}、{{mapping_id}} 等变量。
+    /// 内置 provider 可省略此字段。
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub prompt_template: Option<String>,
+}
+
+/// 插件定义（v1 兼容，deprecated）
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PluginDef {
     pub name: String,
@@ -106,6 +121,10 @@ pub struct NamingRule {
 pub struct ProjectConfig {
     #[serde(default = "default_version")]
     pub version: String,
+    /// Provider 定义列表（v2 新增，定义操作指引模板）
+    #[serde(default)]
+    pub providers: Vec<ProviderDef>,
+    /// 插件定义列表（v1 兼容，deprecated，保留以兼容旧配置）
     #[serde(default)]
     pub plugins: Vec<PluginDef>,
     #[serde(default)]
@@ -122,6 +141,7 @@ impl Default for ProjectConfig {
     fn default() -> Self {
         Self {
             version: "1".to_string(),
+            providers: vec![],
             plugins: vec![PluginDef {
                 name: "localfs".to_string(),
                 enabled: true,

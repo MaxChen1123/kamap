@@ -35,7 +35,10 @@ enum Commands {
     /// Index management (build, stats)
     Index(commands::index::IndexArgs),
 
-    /// Plugin management (list, info)
+    /// Provider management (list, info)
+    Provider(commands::provider::ProviderArgs),
+
+    /// Plugin management (list, info) — deprecated, use `provider` instead
     Plugin(commands::plugin::PluginArgs),
 }
 
@@ -58,6 +61,7 @@ fn main() {
         Commands::Mapping(args) => commands::mapping::run(args),
         Commands::Asset(args) => commands::asset::run(args),
         Commands::Index(args) => commands::index::run(args),
+        Commands::Provider(args) => commands::provider::run(args),
         Commands::Plugin(args) => commands::plugin::run(args),
     };
 
