@@ -328,6 +328,8 @@ Built-in providers (`localfs`, `sqlite`) have default prompts and don't need `pr
 
 ### Workflow A: Post-Coding Document Sync
 
+**Phase 1 — Handle existing mapping impacts:**
+
 1. After code changes, run `{SKILL_DIR}/bin/kamap scan --output json`
 2. For each impact, read the `action_prompt` field:
    - **For localfs assets**: directly read and update the local file as indicated
@@ -340,6 +342,36 @@ Built-in providers (`localfs`, `sqlite`) have default prompts and don't need `pr
    {SKILL_DIR}/bin/kamap scan ack --all --output json
    ```
 4. After updating documents, scan again to confirm nothing was missed
+
+**Phase 2 — Review unmapped changes (CRITICAL — do NOT skip):**
+
+After handling all existing mapping impacts, you MUST proactively review the current changes for unmapped code and documents. This ensures new code and new documents are covered by kamap, not just pre-existing mappings.
+
+5. Review the Git diff (e.g. `git diff origin/main..HEAD --name-status`) and identify:
+   - **New or significantly modified code files** that are NOT covered by any existing mapping
+   - **New document files** (`.md`, `.adoc`, `.rst`, or files under `docs/` etc.) that are NOT registered as assets
+6. For each category, decide whether action is needed:
+
+   **New/modified code files without mappings:**
+   - Ask yourself: does this code implement functionality that is described (or should be described) in any existing knowledge asset?
+   - If YES → create mappings to the relevant asset(s) using Workflow C procedures (read the file, decide granularity, batch add mappings)
+   - If NO (e.g. test files, generated code, trivial scripts, internal refactoring with no user-facing impact) → skip
+   - When unsure → err on the side of creating a mapping; a slightly broad mapping is better than a missing one
+
+   **New document files not registered as assets:**
+   - Ask yourself: is this document a knowledge asset that should be tracked by kamap? (e.g. design docs, API docs, user guides, architecture docs)
+   - If YES → register it as an asset (`asset add`), then create mappings from relevant code files to this new asset
+   - If NO (e.g. changelog entries, release notes, temporary notes) → skip
+   - If the new document covers functionality that was previously mapped to a broader document, consider whether to add additional mappings to the new, more specific document
+
+   **Decision guidelines — what to SKIP:**
+   - Test files (`*_test.*`, `test_*.*`, `tests/`, `__tests__/`)
+   - Generated/compiled files
+   - Lock files, dependency manifests (unless they are explicitly tracked assets)
+   - Trivial config changes (`.gitignore`, editor configs)
+   - Internal refactoring that does not change external behavior or APIs
+
+7. If new assets were registered or new mappings were added, run `{SKILL_DIR}/bin/kamap mapping validate --output json` to verify integrity
 
 ### Workflow B: Project Initialization
 
