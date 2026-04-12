@@ -549,7 +549,6 @@ providers:
 | Segment 解析 | Markdown heading（`{"heading": "xxx"}`） |
 | 健康检查 | 文件是否存在 |
 | 内容读取 | 支持 |
-| 映射发现 | 支持（通过 frontmatter） |
 
 ### `sqlite` — SQLite 数据库
 
@@ -678,17 +677,6 @@ policies:
   - match:
       asset_priority: high
     severity: error
-
-discovery:
-  annotation:
-    enabled: true
-    marker: "@kamap"
-  frontmatter:
-    enabled: true
-    key: kamap
-  naming:
-    enabled: false
-    rules: []
 ```
 
 ---
@@ -750,4 +738,4 @@ kamap-rust/
 
 ## License
 
-MIT
+M

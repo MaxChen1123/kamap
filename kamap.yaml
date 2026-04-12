@@ -1,4 +1,5 @@
 version: '1'
+providers: []
 plugins:
 - name: localfs
   enabled: true
@@ -15,6 +16,14 @@ assets:
   provider: localfs
   type: markdown
   target: kamap-rust/README.md
+- id: detailed-guide
+  provider: localfs
+  type: markdown
+  target: kamap-skill/references/detailed-guide.md
+- id: skill-md
+  provider: localfs
+  type: markdown
+  target: kamap-skill/SKILL.md
 mappings:
 - id: map_d88c84fb
   source:
@@ -562,6 +571,268 @@ mappings:
   _meta:
     origin: ai-generated
     added_at: 2026-04-12T15:14:47.416844+00:00
+- id: map_83999b8b
+  source:
+    path: kamap-rust/crates/kamap-cli/src/commands/scan.rs
+  asset: detailed-guide
+  reason: scan/scan ack 命令参数定义与实现，对应文档 scan/scan ack 参数参考
+  action: update
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-12T16:26:18.735867+00:00
+- id: map_7c6dde2a
+  source:
+    path: kamap-rust/crates/kamap-cli/src/commands/check.rs
+  asset: detailed-guide
+  reason: check 命令参数定义与实现，对应文档 check 参数参考
+  action: update
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-12T16:26:18.735870+00:00
+- id: map_af88c545
+  source:
+    path: kamap-rust/crates/kamap-cli/src/commands/explain.rs
+  asset: detailed-guide
+  reason: explain 命令参数定义与实现，对应文档 explain 参数参考
+  action: update
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-12T16:26:18.735871+00:00
+- id: map_51758e7d
+  source:
+    path: kamap-rust/crates/kamap-cli/src/commands/describe.rs
+  asset: detailed-guide
+  reason: describe 命令参数定义与实现，对应文档 describe 参数参考
+  action: update
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-12T16:26:18.735872+00:00
+- id: map_6b22a465
+  source:
+    path: kamap-rust/crates/kamap-cli/src/commands/mapping.rs
+  asset: detailed-guide
+  reason: mapping 所有子命令参数定义与实现，对应文档 mapping 参数参考
+  action: update
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-12T16:26:18.735873+00:00
+- id: map_d026c5c0
+  source:
+    path: kamap-rust/crates/kamap-cli/src/commands/asset.rs
+  asset: detailed-guide
+  reason: asset 所有子命令参数定义与实现，对应文档 asset 参数参考
+  action: update
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-12T16:26:18.735874+00:00
+- id: map_5a08f034
+  source:
+    path: kamap-rust/crates/kamap-cli/src/commands/index.rs
+  asset: detailed-guide
+  reason: index 子命令参数定义与实现，对应文档 index 参数参考
+  action: update
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-12T16:26:18.735875+00:00
+- id: map_853ae2d3
+  source:
+    path: kamap-rust/crates/kamap-cli/src/commands/provider.rs
+  asset: detailed-guide
+  reason: provider 子命令参数定义与实现，对应文档 provider 参数参考
+  action: update
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-12T16:26:18.735876+00:00
+- id: map_2a057748
+  source:
+    path: kamap-rust/crates/kamap-cli/src/commands/plugin.rs
+  asset: detailed-guide
+  reason: plugin 子命令参数定义与实现，对应文档 plugin 参数参考
+  action: update
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-12T16:26:18.735877+00:00
+- id: map_7d16013a
+  source:
+    path: kamap-rust/crates/kamap-cli/src/commands/init.rs
+  asset: detailed-guide
+  reason: init 命令参数定义与实现，对应文档 init 参数参考
+  action: update
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-12T16:26:18.735878+00:00
+- id: map_fb6ee95b
+  source:
+    path: kamap-rust/crates/kamap-core/src/provider/prompt.rs
+  asset: detailed-guide
+  reason: Provider prompt 渲染核心，对应文档 Provider System 章节
+  action: update
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-12T16:26:18.735879+00:00
+- id: map_5d037e45
+  source:
+    path: kamap-rust/crates/kamap-core/src/models/source.rs
+  asset: detailed-guide
+  reason: SourceLocator 模型定义（anchor/lines/path），文档中 mapping 参数依赖此模型
+  action: review
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-12T16:26:18.735879+00:00
+- id: map_9e133f2c
+  source:
+    path: kamap-rust/crates/kamap-core/src/config/manager.rs
+  asset: detailed-guide
+  reason: 配置管理（双配置合并逻辑），对应文档 Dual Configuration 章节
+  action: review
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-12T16:26:18.735880+00:00
+- id: map_17edbd6a
+  source:
+    path: kamap-rust/crates/kamap-cli/src/commands/scan.rs
+  asset: skill-md
+  reason: scan/scan ack 命令实现，对应 SKILL.md Impact Analysis 和 Workflow A 章节
+  action: update
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-12T16:32:55.553877+00:00
+- id: map_592ceb66
+  source:
+    path: kamap-rust/crates/kamap-cli/src/commands/check.rs
+  asset: skill-md
+  reason: check 命令实现，对应 SKILL.md Impact Analysis 章节
+  action: update
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-12T16:32:55.553880+00:00
+- id: map_ba3763e1
+  source:
+    path: kamap-rust/crates/kamap-cli/src/commands/mapping.rs
+  asset: skill-md
+  reason: mapping 所有子命令实现，对应 SKILL.md Mapping Management 和 Workflow C 章节
+  action: update
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-12T16:32:55.553881+00:00
+- id: map_64a95d5b
+  source:
+    path: kamap-rust/crates/kamap-cli/src/commands/asset.rs
+  asset: skill-md
+  reason: asset 所有子命令实现，对应 SKILL.md Asset Management 章节
+  action: update
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-12T16:32:55.553882+00:00
+- id: map_eacdeb9b
+  source:
+    path: kamap-rust/crates/kamap-cli/src/commands/init.rs
+  asset: skill-md
+  reason: init 命令实现，对应 SKILL.md Project Initialization 章节
+  action: update
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-12T16:32:55.553883+00:00
+- id: map_011bac7d
+  source:
+    path: kamap-rust/crates/kamap-cli/src/commands/explain.rs
+  asset: skill-md
+  reason: explain 命令实现，对应 SKILL.md Relationship Explanation 章节
+  action: update
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-12T16:32:55.553884+00:00
+- id: map_1918de49
+  source:
+    path: kamap-rust/crates/kamap-cli/src/commands/describe.rs
+  asset: skill-md
+  reason: describe 命令实现，对应 SKILL.md Tool Self-Description 章节
+  action: update
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-12T16:32:55.553885+00:00
+- id: map_ed922bd0
+  source:
+    path: kamap-rust/crates/kamap-cli/src/commands/provider.rs
+  asset: skill-md
+  reason: provider 子命令实现，对应 SKILL.md Provider Management 章节
+  action: update
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-12T16:32:55.553886+00:00
+- id: map_b65c799f
+  source:
+    path: kamap-rust/crates/kamap-cli/src/commands/plugin.rs
+  asset: skill-md
+  reason: plugin 子命令实现，对应 SKILL.md Plugin Management 章节
+  action: update
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-12T16:32:55.553887+00:00
+- id: map_4ea05132
+  source:
+    path: kamap-rust/crates/kamap-cli/src/commands/index.rs
+  asset: skill-md
+  reason: index 子命令实现，对应 SKILL.md Index Management 章节
+  action: update
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-12T16:32:55.553888+00:00
+- id: map_ddcd5897
+  source:
+    path: kamap-rust/crates/kamap-cli/src/commands/mod.rs
+  asset: skill-md
+  reason: 双配置加载逻辑，对应 SKILL.md Key Conventions 双配置说明
+  action: review
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-12T16:32:55.553889+00:00
+- id: map_273c25cf
+  source:
+    path: kamap-rust/crates/kamap-core/src/provider/prompt.rs
+  asset: skill-md
+  reason: Provider prompt 渲染核心，对应 SKILL.md Provider System 章节
+  action: update
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-12T16:32:55.553890+00:00
+- id: map_c0ddbb26
+  source:
+    path: kamap-rust/crates/kamap-core/src/models/source.rs
+  asset: skill-md
+  reason: SourceLocator 模型（anchor/lines），对应 SKILL.md Key Conventions anchor 说明
+  action: review
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-12T16:32:55.553891+00:00
+- id: map_aa384d7e
+  source:
+    path: kamap-rust/crates/kamap-core/src/anchor/resolver.rs
+    anchor: pub fn resolve_anchor
+  asset: skill-md
+  reason: anchor 核心解析算法，对应 SKILL.md anchor 使用说明
+  action: update
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-12T16:32:55.553892+00:00
+- id: map_fc692f94
+  source:
+    path: kamap-rust/crates/kamap-core/src/ack/store.rs
+  asset: skill-md
+  reason: scan ack 确认状态管理，对应 SKILL.md Workflow A ack 步骤
+  action: update
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-12T16:32:55.553893+00:00
+- id: map_43be056d
+  source:
+    path: kamap-skill/references/detailed-guide.md
+  asset: skill-md
+  reason: detailed-guide 是 SKILL.md 引用的补充参考文档，两者需保持一致
+  action: review
+  _meta:
+    origin: ai-generated
+    added_at: 2026-04-12T16:32:55.553894+00:00
 policies: []
 discovery:
   annotation:

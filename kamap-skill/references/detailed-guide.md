@@ -12,10 +12,23 @@
 
 | Parameter | Type | Required | Default | Description |
 |-----------|------|----------|---------|-------------|
-| `--base` | string | No | `"origin/main"` | Base Git ref |
-| `--head` | string | No | `"HEAD"` | Head Git ref |
+| `--base` | string | No | `"HEAD"` | Base Git ref (i.e. latest commit) |
+| `--head` | string | No | `"workdir"` | Head Git ref or `"workdir"` for uncommitted changes |
 | `--output` / `-o` | string | No | `"text"` | Output format: text, json |
 | `--config` | string | No | — | Path to config file (overrides auto-discovery) |
+
+### kamap scan ack
+
+Mark impacts as acknowledged (document already synced). Entries in `.kamap/to-ack.json` are marked as acked, so they won't show up in the next scan on the same HEAD.
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `--all` | bool | One of two* | — | Acknowledge all pending impacts |
+| `--ids` | string | One of two* | — | Comma-separated mapping IDs to acknowledge |
+| `--output` / `-o` | string | No | `"text"` | Output format: text, json |
+| `--config` | string | No | — | Path to config file |
+
+*Must specify either `--all` or `--ids`.
 
 ### kamap check
 
@@ -80,15 +93,21 @@ Auto-generates `map_` prefixed UUID. Origin marked as `"manual"`.
       "source_path": "src/foo.rs",
       "asset_id": "my-doc",
       "reason": "Implementation code",
-      "action": "review",
-      "source_lines": [10, 45],
-      "segment": {"heading": "API Reference"}
+      "anchor": "fn handle_request",
+      "anchor_context": "impl Server",
+      "action": "review"
+    },
+    {
+      "source_path": "src/config.rs",
+      "asset_id": "config-doc",
+      "reason": "Config module (whole file)",
+      "action": "review"
     }
   ]
 }
 ```
 
-Fields: `source_path` (required), `asset_id` (required), `reason` (optional), `action` (optional), `source_lines` (optional, `[start, end]`), `segment` (optional, JSON object). Origin is auto-set to `"ai-generated"`.
+Fields: `source_path` (required), `asset_id` (required), `reason` (optional), `action` (optional), `anchor` (optional, recommended — semantic anchor text for dynamic block-level matching), `anchor_context` (optional — outer scope for disambiguation), `source_lines` (optional, `[start, end]` — deprecated, prefer `anchor`), `segment` (optional, JSON object). Origin is auto-set to `"ai-generated"`.
 
 #### mapping remove
 
@@ -108,15 +127,6 @@ Fields: `source_path` (required), `asset_id` (required), `reason` (optional), `a
 
 | Parameter | Type | Required | Default | Description |
 |-----------|------|----------|---------|-------------|
-| `--output` / `-o` | string | No | `"text"` | Output format |
-
-#### mapping discover (temporarily disabled)
-
-> **Note**: This subcommand is currently disabled. The parameters below are for reference only.
-
-| Parameter | Type | Required | Default | Description |
-|-----------|------|----------|---------|-------------|
-| `--include-low-confidence` | bool | No | `false` | Include low confidence candidates |
 | `--output` / `-o` | string | No | `"text"` | Output format |
 
 #### mapping export
@@ -161,6 +171,31 @@ Fields: `source_path` (required), `asset_id` (required), `reason` (optional), `a
 | `--target` | string | **Yes** | — | Target path or location |
 | `--apply` | bool | No | `false` | Actually write (default: dry-run) |
 | `--output` / `-o` | string | No | `"text"` | Output format |
+
+#### asset add-batch
+
+Batch register multiple assets from JSON (atomic operation, avoids race conditions from parallel single adds).
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `--stdin` | bool | One of two* | — | Read JSON from stdin |
+| `--file` | string | One of two* | — | JSON file path |
+| `--apply` | bool | No | `false` | Actually write (default: dry-run) |
+| `--output` / `-o` | string | No | `"text"` | Output format |
+
+*Must specify either `--stdin` or `--file`.
+
+**Batch JSON input format:**
+```json
+{
+  "assets": [
+    {"id": "my-doc", "provider": "localfs", "type": "markdown", "target": "docs/my-doc.md"},
+    {"id": "readme", "provider": "localfs", "type": "markdown", "target": "README.md"}
+  ]
+}
+```
+
+Fields: `id` (required), `provider` (required), `type` (required), `target` (required).
 
 #### asset remove
 
@@ -313,59 +348,7 @@ kamap uses two configuration files:
 - By default, all write operations write to `.kamap.yaml` (personal config)
 - Use the `--shared` flag to write to `kamap.yaml` (team config)
 - Both files are **automatically merged** when loaded
-- Commands with write operations that support `--shared`: `mapping add`, `mapping add-batch`, `mapping remove`, `mapping import`, `asset add`, `asset remove`
-
----
-
-## Mapping Auto-Discovery Strategies (CLI temporarily disabled)
-
-> **Note**: The `mapping discover` CLI command is temporarily disabled. The discovery strategies described below are still implemented in `kamap-core` and can be re-enabled in the future.
-
-### @kamap Code Annotations (Confidence: 0.9)
-
-Declare mapping relationships in code comments:
-
-```rust
-// @kamap asset:auth-doc reason:"认证逻辑" segment:{"heading":"Login"}
-pub fn login() { ... }
-```
-
-```python
-# @kamap asset:data-doc reason:"数据模型定义"
-class User(BaseModel): ...
-```
-
-Supported comment formats: `//`, `#`, `/* */`, `--`
-
-### Markdown Frontmatter (Confidence: 0.85)
-
-Declare relationships in Markdown document headers:
-
-```markdown
----
-kamap:
-  relates-to:
-    - path: src/auth/**/*.ts
-      reason: "认证模块实现"
-    - path: src/auth/login.ts
-      lines: "10-45"
-      segment:
-        heading: "Login Flow"
----
-```
-
-### Naming Conventions (Confidence: 0.6, disabled by default)
-
-Auto-infer through directory naming rules:
-
-```yaml
-discovery:
-  naming:
-    enabled: true
-    rules:
-      - source: "src/{module}/**"
-        asset_pattern: "docs/{module}.md"
-```
+- Commands with write operations that support `--shared`: `mapping add`, `mapping add-batch`, `mapping remove`, `mapping import`, `asset add`, `asset add-batch`, `asset remove`
 
 ---
 
