@@ -22,12 +22,7 @@ kamap is a Git-based **code-to-knowledge-asset mapping and impact analysis frame
 
 The script compiles a release build and packages the output as `kamap-skill.zip`, containing the binary and Skill description files.
 
-Optional arguments:
 
-```bash
-./scripts/build-skill.sh --debug              # debug build
-./scripts/build-skill.sh --target <triple>    # cross-compile
-```
 
 > Requires a Rust toolchain. If not installed, see [rustup.rs](https://rustup.rs/).
 
@@ -46,7 +41,6 @@ Agent usage examples:
 
 - **"Scan which documents are affected by current changes"** — Agent calls `kamap scan` to analyze impacted assets
 - **"Create a mapping between src/auth and docs/auth.md"** — Agent calls `kamap asset add` + `kamap mapping add`
-- **"Check if any documents need updating"** — Agent calls `kamap check` for CI-level validation
 
 All write operations in the Skill default to dry-run mode and require `--apply` to take effect, ensuring safe agent usage.
 
