@@ -50,6 +50,42 @@ Agent usage examples:
 
 All write operations in the Skill default to dry-run mode and require `--apply` to take effect, ensuring safe agent usage.
 
+### Typical Skill Scenarios
+
+#### Scenario 1: Batch-configure mappings for existing docs
+
+Just tell the Agent:
+
+> **"Set up mappings for all documents under `docs/`"**
+
+The Agent will automatically:
+1. Scan all document files under `docs/` and register them as knowledge assets
+2. Analyze which code files and functions each document relates to
+3. Create code-to-document mappings accordingly
+
+No need to specify any paths or parameters manually.
+
+#### Scenario 2: Pre-commit impact check
+
+Before committing, tell the Agent:
+
+> **"Show me which document mappings are affected"**
+
+The Agent will:
+1. Scan current Git changes and list all impacted documents
+2. Tell you which documents may need updating — you can ask the Agent to update them directly
+3. **Proactively review unmapped changes**: The Agent also identifies new/modified code and documents that are not yet covered by any mapping, and sets up mappings on its own
+
+#### Scenario 3: Personal config vs shared team config
+
+By default, the Skill writes all configuration (asset registrations, mappings) to the **personal config** `.kamap.yaml` (gitignored).
+
+If you want the configuration written to the **shared team config** `kamap.yaml` (committed to Git), explicitly tell the Agent:
+
+> **"Write to the shared config"** or **"Use team config"**
+
+Otherwise the Agent always defaults to personal config and won't affect the team repository.
+
 ### Why Use the Skill?
 
 - **Zero memorization**: No need to remember CLI commands or flags — just describe your intent in natural language
