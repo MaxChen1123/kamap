@@ -1,4 +1,4 @@
-use crate::models::{Action, ImpactReport, Severity, SourceMatch};
+use crate::models::{Action, ChangeType, ImpactReport, Severity, SourceMatch};
 
 /// 将影响报告格式化为人类可读文本
 pub fn format_impact_text(report: &ImpactReport) -> String {
@@ -27,8 +27,13 @@ pub fn format_impact_text(report: &ImpactReport) -> String {
         ));
 
         // Source 信息
+        let change_label = format_change_type(&impact.change_type);
+        let cl = &impact.changed_lines;
         let source_str = match &impact.source {
-            SourceMatch::WholeFile { path } => format!("   Source:  {} (modified)\n", path),
+            SourceMatch::WholeFile { path } => format!(
+                "   Source:  {} ({}, +{} -{})\n",
+                path, change_label, cl.additions, cl.deletions
+            ),
             SourceMatch::LineRange {
                 path,
                 matched_hunks,
@@ -37,7 +42,10 @@ pub fn format_impact_text(report: &ImpactReport) -> String {
                     .iter()
                     .map(|h| format!("{}-{}", h.start_line, h.end_line))
                     .collect();
-                format!("   Source:  {}:{} (modified)\n", path, hunks.join(","))
+                format!(
+                    "   Source:  {}:{} ({}, +{} -{})\n",
+                    path, hunks.join(","), change_label, cl.additions, cl.deletions
+                )
             }
         };
         out.push_str(&source_str);
@@ -86,5 +94,14 @@ fn format_action(action: &Action) -> String {
         Action::Verify => "🔍 VERIFY".to_string(),
         Action::Acknowledge => "✅ ACKNOWLEDGE".to_string(),
         Action::Custom(s) => format!("📌 {}", s.to_uppercase()),
+    }
+}
+
+fn format_change_type(ct: &ChangeType) -> &'static str {
+    match ct {
+        ChangeType::Added => "added",
+        ChangeType::Modified => "modified",
+        ChangeType::Deleted => "deleted",
+        ChangeType::Renamed { .. } => "renamed",
     }
 }

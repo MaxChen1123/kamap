@@ -5,7 +5,7 @@ use kamap_core::ack::{ToAckEntry, ToAckStore};
 use kamap_core::analyzer::ImpactAnalyzer;
 use kamap_core::git::DiffAnalyzer;
 use kamap_core::mapping::MappingEngine;
-use kamap_core::models::{Action, ImpactReport, Severity, SourceMatch};
+use kamap_core::models::{Action, ChangeType, ImpactReport, Severity, SourceMatch};
 use kamap_core::output::OutputMode;
 
 use super::{load_config, workspace_root};
@@ -151,6 +151,12 @@ fn print_json_report(
                 "asset_target": i.asset.target,
                 "provider": i.asset.provider,
                 "source": source_path_str(&i.source),
+                "change_type": format_change_type_tag(&i.change_type),
+                "changed_lines": {
+                    "additions": i.changed_lines.additions,
+                    "deletions": i.changed_lines.deletions,
+                    "total": i.changed_lines.total(),
+                },
                 "reason": i.reason,
                 "action": format_action_tag(&i.suggested_action),
                 "severity": format!("{:?}", i.severity).to_lowercase(),
@@ -198,14 +204,18 @@ fn print_text_report(
             Severity::Info => "🔵",
         };
         let action = format_action_tag(&impact.suggested_action);
+        let ct = format_change_type_tag(&impact.change_type);
 
         println!(
-            "  {}  #{} [{}] {} → {}",
+            "  {}  #{} [{}] {} → {} ({}, +{} -{})",
             icon,
             i + 1,
             action.to_uppercase(),
             source_path_str(&impact.source),
             impact.asset.target,
+            ct,
+            impact.changed_lines.additions,
+            impact.changed_lines.deletions,
         );
         println!("      mapping: {}  asset: {}", impact.mapping_id, impact.asset.id);
         println!("      reason:  {}", impact.reason);
@@ -292,5 +302,14 @@ fn format_action_tag(action: &Action) -> String {
         Action::Verify => "verify".to_string(),
         Action::Acknowledge => "acknowledge".to_string(),
         Action::Custom(s) => s.clone(),
+    }
+}
+
+fn format_change_type_tag(ct: &ChangeType) -> &'static str {
+    match ct {
+        ChangeType::Added => "added",
+        ChangeType::Modified => "modified",
+        ChangeType::Deleted => "deleted",
+        ChangeType::Renamed { .. } => "renamed",
     }
 }

@@ -173,7 +173,7 @@ kamap mapping add \
 kamap scan
 ```
 
-扫描当前 Git 变更，输出受影响的知识资产列表。每个影响包含 `action_prompt` 字段，提供具体的操作指引（由 Provider 生成）。CI 场景下也可使用 `kamap check`，功能相同但存在 error 级别影响时返回非零退出码。
+扫描当前 Git 变更，输出受影响的知识资产列表。每个影响包含 `change_type` 字段（`added`/`modified`/`deleted`/`renamed`）标识变更类型，以及 `action_prompt` 字段提供具体的操作指引（由 Provider 生成）。CI 场景下也可使用 `kamap check`，功能相同但存在 error 级别影响时返回非零退出码。
 
 ### Provider 系统
 
@@ -184,6 +184,7 @@ providers:
   - name: iwiki
     prompt_template: |
       代码变更影响了 iwiki 文档「{{asset.meta.title}}」(文档 ID: {{asset.target}})。
+      变更类型: {{change_type}}
       请通过 iwiki MCP 读取并更新文档。
 ```
 

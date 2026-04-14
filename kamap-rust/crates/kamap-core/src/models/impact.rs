@@ -2,7 +2,8 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 use super::asset::AssetDef;
-use super::mapping::{Action, HitType, SourceMatch};
+use super::mapping::{Action, ChangedLines, HitType, SourceMatch};
+use super::source::ChangeType;
 
 /// 严重程度
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
@@ -30,12 +31,17 @@ pub struct Impact {
     pub source: SourceMatch,
     pub mapping_id: String,
     pub hit_type: HitType,
+    /// 触发此影响的 Git 变更类型（added/modified/deleted/renamed）
+    pub change_type: ChangeType,
     pub reason: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub segment: Option<SegmentInfo>,
     pub confidence: f32,
     pub suggested_action: Action,
     pub severity: Severity,
+    /// 触发此影响的变更行数统计
+    #[serde(default)]
+    pub changed_lines: ChangedLines,
     /// Provider 生成的操作指引 prompt（v2 新增）
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub action_prompt: Option<String>,

@@ -659,6 +659,66 @@ impl ConfigManager {
         report
     }
 
+    /// 校验整个配置（含文件系统校验：anchor 有效性等）
+    ///
+    /// 在 `validate()` 的基础上，增加需要读取文件的校验：
+    /// - 对精确路径（非 glob）映射，校验 anchor 是否能在文件中找到
+    pub fn validate_with_workspace(&self, workspace: &Path) -> ValidationReport {
+        let mut report = self.validate();
+
+        // 校验 anchor 有效性（仅对非 glob 精确路径）
+        for mapping in &self.config.mappings {
+            if let Some(ref anchor) = mapping.source.anchor {
+                let path = &mapping.source.path;
+
+                // 跳过 glob 模式（包含 * 或 ? 或 [）
+                if path.contains('*') || path.contains('?') || path.contains('[') {
+                    report.warnings.push(format!(
+                        "Mapping '{}': anchor '{}' on glob pattern '{}' — cannot validate statically",
+                        mapping.id, anchor, path
+                    ));
+                    continue;
+                }
+
+                let full_path = workspace.join(path);
+                if !full_path.exists() {
+                    report.warnings.push(format!(
+                        "Mapping '{}': source file '{}' does not exist, cannot validate anchor '{}'",
+                        mapping.id, path, anchor
+                    ));
+                    continue;
+                }
+
+                match std::fs::read_to_string(&full_path) {
+                    Ok(content) => {
+                        let result = crate::anchor::resolve_anchor(
+                            &content,
+                            anchor,
+                            mapping.source.anchor_context.as_deref(),
+                        );
+                        if result.is_none() {
+                            let ctx_info = mapping.source.anchor_context.as_ref()
+                                .map(|c| format!(" (context: '{}')", c))
+                                .unwrap_or_default();
+                            report.warnings.push(format!(
+                                "Mapping '{}': anchor '{}'{} not found in '{}'",
+                                mapping.id, anchor, ctx_info, path
+                            ));
+                        }
+                    }
+                    Err(e) => {
+                        report.warnings.push(format!(
+                            "Mapping '{}': failed to read '{}' for anchor validation: {}",
+                            mapping.id, path, e
+                        ));
+                    }
+                }
+            }
+        }
+
+        report
+    }
+
     /// 校验单个映射
     pub fn validate_mapping(&self, mapping: &MappingDef) -> ValidationResult {
         let mut issues = vec![];

@@ -75,7 +75,7 @@ Automatically identify affected knowledge assets when code changes:
 {SKILL_DIR}/bin/kamap check --base origin/main --head HEAD --output json
 ```
 
-**Typical scenario**: After modifying code, run scan to see which documents need synchronization. The output includes `action` field per impact: `update`, `review`, `verify`, or `acknowledge`.
+**Typical scenario**: After modifying code, run scan to see which documents need synchronization. The output includes `change_type` field per impact (`added`/`modified`/`deleted`/`renamed`) to identify the type of Git change, and `action` field: `update`, `review`, `verify`, or `acknowledge`.
 
 ### 2. Mapping Management (mapping)
 
@@ -131,7 +131,7 @@ echo '{"mappings":[
 # Remove a mapping by ID
 {SKILL_DIR}/bin/kamap mapping remove --id map_abc123 --output json
 
-# Validate all mappings
+# Validate all mappings (includes anchor validity checks)
 {SKILL_DIR}/bin/kamap mapping validate --output json
 
 # Export mappings (uses --format, not --output; supports json, yaml, csv)
@@ -287,13 +287,15 @@ kamap v2 introduces a **prompt-driven provider architecture**. Instead of kamap 
 
 ### Scan output with action_prompt
 
-Each impact in `kamap scan --output json` now includes an `action_prompt` field:
+Each impact in `kamap scan --output json` now includes an `action_prompt` field and a `changed_lines` field:
 
 ```json
 {
   "mapping_id": "map_xxx",
   "asset_id": "auth-design-doc",
   "provider": "iwiki",
+  "change_type": "modified",
+  "changed_lines": { "additions": 5, "deletions": 2, "total": 7 },
   "action_prompt": "代码变更影响了 iwiki 文档「认证模块设计文档」(文档 ID: 12345678)...",
   "action": "update",
   "reason": "登录函数实现变更"
@@ -320,7 +322,7 @@ providers:
       3. 调用 saveDocument 保存修改后的文档
 ```
 
-Template variables: `{{asset.id}}`, `{{asset.target}}`, `{{asset.type}}`, `{{asset.provider}}`, `{{asset.meta.*}}`, `{{source.path}}`, `{{source.file}}`, `{{source.hunks}}`, `{{reason}}`, `{{action}}`, `{{mapping_id}}`.
+Template variables: `{{asset.id}}`, `{{asset.target}}`, `{{asset.type}}`, `{{asset.provider}}`, `{{asset.meta.*}}`, `{{source.path}}`, `{{source.file}}`, `{{source.hunks}}`, `{{reason}}`, `{{action}}`, `{{mapping_id}}`, `{{change_type}}`, `{{changed_lines}}`, `{{changed_lines.additions}}`, `{{changed_lines.deletions}}`, `{{changed_lines.total}}`.
 
 Built-in providers (`localfs`, `sqlite`) have default prompts and don't need `prompt_template`.
 
@@ -331,9 +333,31 @@ Built-in providers (`localfs`, `sqlite`) have default prompts and don't need `pr
 **Phase 1 — Handle existing mapping impacts:**
 
 1. After code changes, run `{SKILL_DIR}/bin/kamap scan --output json`
-2. For each impact, read the `action_prompt` field:
+2. For each impact, **first assess whether the change warrants a document update** based on the `changed_lines` field and the nature of the change:
+
+   **CRITICAL — Change significance assessment (do NOT skip):**
+
+   Before updating any document, you MUST evaluate whether the code change is significant enough to be reflected in the document. Each impact includes a `changed_lines` field with `additions`, `deletions`, and `total` counts. Use this along with the diff content to judge:
+
+   - **Skip document update** (just acknowledge) when:
+     - The change is a small internal implementation detail (e.g. adding a private helper function, adjusting internal logic, fixing a minor bug) that does not affect the behavior, interface, or concepts described in the document
+     - The change is cosmetic (renaming local variables, reformatting, adding comments in code)
+     - The document describes things at a higher abstraction level (architecture, workflow, API surface) and the change is below that level of detail
+     - Adding this detail would make the document inconsistent in granularity with its existing content — **match the document's existing level of detail, do not make it more granular**
+
+   - **Update the document** when:
+     - The change affects public APIs, interfaces, configuration options, command-line arguments, or user-visible behavior
+     - The change adds/removes/modifies a feature, workflow step, or concept that the document describes
+     - The change contradicts or invalidates something currently stated in the document
+     - The change is large enough (in scope, not just line count) to represent a meaningful behavioral difference
+
+   **Rule of thumb**: Read the existing document first. If the document doesn't describe things at the level of detail of this change, don't add that detail — just acknowledge the impact. A document that stays consistent in granularity is more useful than one that has random implementation details mixed in with high-level descriptions.
+
+   After assessment, for impacts that DO need document updates:
    - **For localfs assets**: directly read and update the local file as indicated
    - **For custom provider assets** (iwiki, notion, etc.): follow the `action_prompt` instructions, which may involve calling MCP tools, Skills, or other methods
+
+   For impacts that do NOT need document updates, skip directly to acknowledgement.
 3. After handling each impact, acknowledge it:
    ```bash
    # Acknowledge specific impacts by mapping ID

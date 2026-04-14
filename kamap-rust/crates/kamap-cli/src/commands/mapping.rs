@@ -448,7 +448,8 @@ fn run_list(args: ListArgs, config_path: Option<&str>) -> Result<()> {
 
 fn run_validate(args: ValidateArgs, config_path: Option<&str>) -> Result<()> {
     let cm = load_config(config_path)?;
-    let report = cm.validate();
+    let workspace = workspace_root(cm.path());
+    let report = cm.validate_with_workspace(&workspace);
 
     if args.output == "json" {
         println!(
@@ -460,8 +461,10 @@ fn run_validate(args: ValidateArgs, config_path: Option<&str>) -> Result<()> {
             })
         );
     } else {
-        if report.is_valid() {
+        if report.is_valid() && report.warnings.is_empty() {
             println!("✅ All mappings are valid.");
+        } else if report.is_valid() {
+            println!("✅ All mappings are valid (with warnings).\n");
         } else {
             println!("❌ Validation failed:\n");
             for err in &report.errors {

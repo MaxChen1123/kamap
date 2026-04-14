@@ -125,6 +125,12 @@ Fields: `source_path` (required), `asset_id` (required), `reason` (optional), `a
 
 #### mapping validate
 
+Validates all mapping definitions. Checks include:
+- Asset references exist
+- Source paths are non-empty
+- Line ranges are valid (start ≤ end)
+- **Anchor validity**: For exact-path (non-glob) mappings with anchors, verifies that the anchor text can be found in the current source file. Glob mappings with anchors produce a warning that static validation is not possible.
+
 | Parameter | Type | Required | Default | Description |
 |-----------|------|----------|---------|-------------|
 | `--output` / `-o` | string | No | `"text"` | Output format |

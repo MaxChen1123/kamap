@@ -73,6 +73,21 @@ pub struct MappingUpdate {
     pub segment: Option<serde_json::Value>,
 }
 
+/// 变更行数统计
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct ChangedLines {
+    /// 新增行数
+    pub additions: u32,
+    /// 删除行数
+    pub deletions: u32,
+}
+
+impl ChangedLines {
+    pub fn total(&self) -> u32 {
+        self.additions + self.deletions
+    }
+}
+
 /// 映射匹配命中
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MappingHit {
@@ -82,6 +97,11 @@ pub struct MappingHit {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub segment: Option<serde_json::Value>,
     pub hit_type: HitType,
+    /// 触发此命中的 Git 变更类型
+    pub change_type: super::source::ChangeType,
+    /// 触发此命中的变更行数统计
+    #[serde(default)]
+    pub changed_lines: ChangedLines,
 }
 
 /// 命中类型

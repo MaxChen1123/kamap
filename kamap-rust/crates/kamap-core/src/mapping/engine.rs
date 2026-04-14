@@ -4,7 +4,7 @@ use anyhow::Result;
 
 use crate::anchor::resolve_anchor;
 use crate::config::ProjectConfig;
-use crate::models::{ChangeEntry, HitType, HunkRange, MappingHit, SourceMatch};
+use crate::models::{ChangeEntry, ChangedLines, HitType, HunkRange, MappingHit, SourceMatch};
 
 use super::index::MappingIndex;
 
@@ -52,6 +52,7 @@ impl MappingEngine {
                     }
 
                     if !matched_hunks.is_empty() {
+                        let changed_lines = sum_changed_lines(&matched_hunks);
                         hits.push(MappingHit {
                             mapping_id: entry.mapping_id.clone(),
                             source_match: SourceMatch::LineRange {
@@ -65,12 +66,17 @@ impl MappingEngine {
                                 change_hunk: change.hunks.first().cloned().unwrap_or(HunkRange {
                                     start_line: 0,
                                     end_line: 0,
+                                    additions: 0,
+                                    deletions: 0,
                                 }),
                             },
+                            change_type: change.change_type.clone(),
+                            changed_lines,
                         });
                     }
                 } else {
                     // 文件级匹配（无行范围限制）
+                    let changed_lines = sum_changed_lines(&change.hunks);
                     hits.push(MappingHit {
                         mapping_id: entry.mapping_id.clone(),
                         source_match: SourceMatch::WholeFile {
@@ -81,6 +87,8 @@ impl MappingEngine {
                         hit_type: HitType::FileMatch {
                             pattern: entry.matcher.glob().to_string(),
                         },
+                        change_type: change.change_type.clone(),
+                        changed_lines,
                     });
                 }
             }
@@ -131,10 +139,21 @@ fn hunks_overlap(hunk: &HunkRange, range: &[u32; 2]) -> bool {
     hunk.start_line <= range[1] && range[0] <= hunk.end_line
 }
 
+/// 从 hunk 列表中汇总变更行数
+fn sum_changed_lines(hunks: &[HunkRange]) -> ChangedLines {
+    let mut additions: u32 = 0;
+    let mut deletions: u32 = 0;
+    for hunk in hunks {
+        additions += hunk.additions;
+        deletions += hunk.deletions;
+    }
+    ChangedLines { additions, deletions }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::{ChangeType, MappingDef, MappingMeta, SourceLocator};
+    use crate::models::{ChangeType, MappingDef, SourceLocator};
 
     fn make_config(mappings: Vec<MappingDef>) -> ProjectConfig {
         ProjectConfig {
@@ -168,12 +187,16 @@ mod tests {
             hunks: vec![HunkRange {
                 start_line: 10,
                 end_line: 20,
+                additions: 11,
+                deletions: 5,
             }],
         }];
 
         let hits = engine.resolve(&changes, Path::new("."));
         assert_eq!(hits.len(), 1);
         assert_eq!(hits[0].mapping_id, "m1");
+        assert_eq!(hits[0].changed_lines.additions, 11);
+        assert_eq!(hits[0].changed_lines.deletions, 5);
     }
 
     #[test]
@@ -203,6 +226,8 @@ mod tests {
             hunks: vec![HunkRange {
                 start_line: 30,
                 end_line: 40,
+                additions: 8,
+                deletions: 3,
             }],
         }];
         let hits = engine.resolve(&changes, Path::new("."));
@@ -215,6 +240,8 @@ mod tests {
             hunks: vec![HunkRange {
                 start_line: 50,
                 end_line: 60,
+                additions: 5,
+                deletions: 2,
             }],
         }];
         let hits = engine.resolve(&changes, Path::new("."));

@@ -35,6 +35,12 @@ pub enum ChangeType {
 pub struct HunkRange {
     pub start_line: u32,
     pub end_line: u32,
+    /// 此 hunk 中新增的行数
+    #[serde(default)]
+    pub additions: u32,
+    /// 此 hunk 中删除的行数
+    #[serde(default)]
+    pub deletions: u32,
 }
 
 /// 单个文件的变更

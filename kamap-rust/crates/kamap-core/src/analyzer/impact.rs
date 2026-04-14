@@ -69,6 +69,8 @@ impl ImpactAnalyzer {
                 reason: &reason,
                 action: &suggested_action,
                 mapping_id: &hit.mapping_id,
+                change_type: &hit.change_type,
+                changed_lines: &hit.changed_lines,
             };
             let action_prompt = render_action_prompt(&provider_def, &prompt_ctx);
 
@@ -77,11 +79,13 @@ impl ImpactAnalyzer {
                 source: hit.source_match.clone(),
                 mapping_id: hit.mapping_id.clone(),
                 hit_type: hit.hit_type.clone(),
+                change_type: hit.change_type.clone(),
                 reason,
                 segment,
                 confidence,
                 suggested_action,
                 severity,
+                changed_lines: hit.changed_lines.clone(),
                 action_prompt: Some(action_prompt),
             });
         }

@@ -9,7 +9,7 @@
 | **Asset（资产）** | 需要与代码保持同步的知识资产，如文档、数据库、配置文件等 |
 | **Mapping（映射）** | 源代码路径/行范围/语义锚点与资产之间的关联关系 |
 | **Anchor（锚点）** | 语义锚点，通过文本特征（如 `fn login`、`class AuthService`）动态定位代码块，避免行号漂移问题 |
-| **Impact（影响）** | 当代码变更命中映射规则时产生的影响报告 |
+| **Impact（影响）** | 当代码变更命中映射规则时产生的影响报告，包含变更类型（added/modified/deleted/renamed）等信息 |
 | **Ack（确认）** | 开发者确认已同步文档后的标记，避免重复提醒 |
 | **Provider（提供者）** | 定义影响检测后如何生成操作指引（`action_prompt`），内置 `localfs`/`sqlite`，可自定义扩展 |
 | **Plugin（插件）** | 不同资产类型的处理器，负责健康检查、内容读取、元信息获取等（v1 兼容，逐步由 Provider 替代） |
@@ -97,9 +97,11 @@ kamap scan --config path/to/kamap.yaml  # 指定配置文件
 | `--output` / `-o` | `text` | 输出格式 |
 | `--config` | 自动查找 | 配置文件路径 |
 
-**工作流程**: Git diff → 映射引擎匹配（含 anchor 动态解析）→ 影响分析 → Provider 渲染 `action_prompt` → 过滤已确认项 → 写入 `.kamap/to-ack.json` → 输出报告
+**工作流程**: Git diff → 映射引擎匹配（含 anchor 动态解析）→ 影响分析（含变更类型传递）→ Provider 渲染 `action_prompt` → 过滤已确认项 → 写入 `.kamap/to-ack.json` → 输出报告
 
 扫描结果会自动写入 `.kamap/to-ack.json`，记录每个影响的确认状态。同一 HEAD commit 下已确认的影响不会重复显示。
+
+每个影响条目包含 `change_type` 字段（`added`/`modified`/`deleted`/`renamed`），标识触发影响的 Git 变更类型，便于区分文件新增、修改、删除等不同场景。
 
 ---
 
@@ -300,7 +302,11 @@ kamap mapping list -o json          # JSON 输出
 
 #### `kamap mapping validate`
 
-校验所有映射定义的有效性（资产引用是否存在、路径是否为空等）。
+校验所有映射定义的有效性：
+- 资产引用是否存在
+- 路径是否为空
+- 行范围是否合法
+- **anchor 有效性**：对精确路径（非 glob）映射，检查 anchor 是否能在当前文件中找到。glob 映射的 anchor 无法静态校验，会输出 warning 提示。
 
 ```bash
 kamap mapping validate
@@ -533,7 +539,7 @@ providers:
       请通过 iwiki MCP 完成操作。
 ```
 
-模板变量：`{{asset.id}}`、`{{asset.target}}`、`{{asset.type}}`、`{{asset.provider}}`、`{{asset.meta.*}}`、`{{source.path}}`、`{{source.file}}`、`{{source.hunks}}`、`{{reason}}`、`{{action}}`、`{{mapping_id}}`。
+模板变量：`{{asset.id}}`、`{{asset.target}}`、`{{asset.type}}`、`{{asset.provider}}`、`{{asset.meta.*}}`、`{{source.path}}`、`{{source.file}}`、`{{source.hunks}}`、`{{reason}}`、`{{action}}`、`{{mapping_id}}`、`{{change_type}}`。
 
 ---
 
@@ -562,9 +568,11 @@ providers:
 
 ---
 
-## 映射发现（Discovery）
+## 映射发现（Discovery）（暂时关闭）
 
-`kamap mapping discover` 命令支持三种自动发现策略：
+> **注意**：`mapping discover` 子命令目前已暂时关闭，CLI 入口不可用。底层发现策略的实现代码仍保留，以下文档供参考。
+
+~~`kamap mapping discover` 命令支持三种自动发现策略：~~
 
 ### 1. 代码注释扫描（Annotation）
 

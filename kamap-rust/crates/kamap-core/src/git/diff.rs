@@ -194,6 +194,8 @@ fn parse_diff(diff: &git2::Diff) -> Result<DiffResult> {
                 let hunk_range = HunkRange {
                     start_line: hunk.new_start(),
                     end_line: hunk.new_start() + hunk.new_lines().max(1) - 1,
+                    additions: hunk.new_lines(),
+                    deletions: hunk.old_lines(),
                 };
                 // 避免重复添加相同的 hunk
                 if !entry.hunks.iter().any(|h| {
