@@ -177,15 +177,15 @@ kamap scan
 
 ### Provider 系统
 
-Provider 定义了 kamap 在检测到影响时如何生成操作指引（`action_prompt`）。内置 provider（`localfs`、`sqlite`）有默认 prompt；可通过 `kamap.yaml` 中的 `providers` 配置自定义 provider（如 iwiki、notion），并通过 `prompt_template` 定义操作指引模板：
+Provider 定义了 kamap 在检测到影响时如何生成操作指引（`action_prompt`）。内置 provider（`localfs`、`sqlite`）有默认 prompt；可通过 `kamap.yaml` 中的 `providers` 配置自定义 provider（如 notion、confluence），并通过 `prompt_template` 定义操作指引模板：
 
 ```yaml
 providers:
-  - name: iwiki
+  - name: notion
     prompt_template: |
-      代码变更影响了 iwiki 文档「{{asset.meta.title}}」(文档 ID: {{asset.target}})。
+      代码变更影响了 Notion 页面「{{asset.meta.title}}」(页面 ID: {{asset.target}})。
       变更类型: {{change_type}}
-      请通过 iwiki MCP 读取并更新文档。
+      请通过 Notion MCP 读取并更新该页面。
 ```
 
 查看已注册的 provider：

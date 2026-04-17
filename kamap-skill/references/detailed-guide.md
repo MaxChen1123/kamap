@@ -287,7 +287,7 @@ kamap v2 replaces the old plugin system with a **prompt-driven provider architec
 | Type | Description | `prompt_template` |
 |------|-------------|-------------------|
 | **builtin** | `localfs`, `sqlite` — shipped with kamap, have default prompts | Optional (override default) |
-| **custom** | User-defined providers (iwiki, notion, etc.) | Required |
+| **custom** | User-defined providers (notion, confluence, etc.) | Required |
 
 ### Configuration
 
@@ -295,18 +295,18 @@ Providers are defined in the `providers` section of `kamap.yaml`:
 
 ```yaml
 providers:
-  - name: iwiki
+  - name: notion
     prompt_template: |
-      代码变更影响了 iwiki 文档「{{asset.meta.title}}」(文档 ID: {{asset.target}})。
+      代码变更影响了 Notion 页面「{{asset.meta.title}}」(页面 ID: {{asset.target}})。
 
       变更来源: {{source.path}}
       影响原因: {{reason}}
       建议操作: {{action}}
 
-      请通过 iwiki MCP 完成以下操作：
-      1. 调用 getDocument(docId: "{{asset.target}}") 读取文档当前内容
-      2. 阅读代码变更，判断文档哪些部分需要更新
-      3. 调用 saveDocument 保存修改后的文档
+      请通过 Notion MCP 完成以下操作：
+      1. 调用 getPage(pageId: "{{asset.target}}") 读取页面当前内容
+      2. 阅读代码变更，判断页面哪些部分需要更新
+      3. 调用 updateBlock 保存修改后的页面
 
   - name: feishu-doc
     prompt_template: |

@@ -236,9 +236,9 @@ mod tests {
     #[test]
     fn test_custom_template() {
         let provider = ProviderDef {
-            name: "iwiki".to_string(),
+            name: "notion".to_string(),
             prompt_template: Some(
-                "Update iwiki doc {{asset.meta.title}} (ID: {{asset.target}}). Source: {{source.path}}, Reason: {{reason}}, Changes: {{changed_lines}}".to_string()
+                "Update notion page {{asset.meta.title}} (ID: {{asset.target}}). Source: {{source.path}}, Reason: {{reason}}, Changes: {{changed_lines}}".to_string()
             ),
         };
         let mut meta = HashMap::new();
@@ -248,7 +248,7 @@ mod tests {
         );
         let asset = AssetDef {
             id: "auth-doc".to_string(),
-            provider: "iwiki".to_string(),
+            provider: "notion".to_string(),
             asset_type: "document".to_string(),
             target: "12345678".to_string(),
             meta,

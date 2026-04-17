@@ -179,15 +179,15 @@ Scans current Git changes and outputs a list of affected knowledge assets. Each 
 
 ### Provider System
 
-Providers define how kamap generates action prompts (`action_prompt`) when impacts are detected. Built-in providers (`localfs`, `sqlite`) have default prompts; you can define custom providers (e.g. iwiki, notion) in `kamap.yaml` with a `prompt_template`:
+Providers define how kamap generates action prompts (`action_prompt`) when impacts are detected. Built-in providers (`localfs`, `sqlite`) have default prompts; you can define custom providers (e.g. notion, confluence) in `kamap.yaml` with a `prompt_template`:
 
 ```yaml
 providers:
-  - name: iwiki
+  - name: notion
     prompt_template: |
-      Code changes affected iwiki doc "{{asset.meta.title}}" (doc ID: {{asset.target}}).
+      Code changes affected Notion page "{{asset.meta.title}}" (page ID: {{asset.target}}).
       Change type: {{change_type}}
-      Please read and update the document via iwiki MCP.
+      Please read and update the page via Notion MCP.
 ```
 
 View registered providers:

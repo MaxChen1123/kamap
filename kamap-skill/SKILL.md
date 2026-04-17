@@ -293,10 +293,10 @@ Each impact in `kamap scan --output json` now includes an `action_prompt` field 
 {
   "mapping_id": "map_xxx",
   "asset_id": "auth-design-doc",
-  "provider": "iwiki",
+  "provider": "notion",
   "change_type": "modified",
   "changed_lines": { "additions": 5, "deletions": 2, "total": 7 },
-  "action_prompt": "代码变更影响了 iwiki 文档「认证模块设计文档」(文档 ID: 12345678)...",
+  "action_prompt": "代码变更影响了 Notion 页面「认证模块设计文档」(页面 ID: 12345678)...",
   "action": "update",
   "reason": "登录函数实现变更"
 }
@@ -308,18 +308,18 @@ Define providers in `kamap.yaml` with a `prompt_template`:
 
 ```yaml
 providers:
-  - name: iwiki
+  - name: notion
     prompt_template: |
-      代码变更影响了 iwiki 文档「{{asset.meta.title}}」(文档 ID: {{asset.target}})。
+      代码变更影响了 Notion 页面「{{asset.meta.title}}」(页面 ID: {{asset.target}})。
 
       变更来源: {{source.path}}
       影响原因: {{reason}}
       建议操作: {{action}}
 
-      请通过 iwiki MCP 完成以下操作：
-      1. 调用 getDocument(docId: "{{asset.target}}") 读取文档当前内容
-      2. 阅读代码变更，判断文档哪些部分需要更新
-      3. 调用 saveDocument 保存修改后的文档
+      请通过 Notion MCP 完成以下操作：
+      1. 调用 getPage(pageId: "{{asset.target}}") 读取页面当前内容
+      2. 阅读代码变更，判断页面哪些部分需要更新
+      3. 调用 updateBlock 保存修改后的页面
 ```
 
 Template variables: `{{asset.id}}`, `{{asset.target}}`, `{{asset.type}}`, `{{asset.provider}}`, `{{asset.meta.*}}`, `{{source.path}}`, `{{source.file}}`, `{{source.hunks}}`, `{{reason}}`, `{{action}}`, `{{mapping_id}}`, `{{change_type}}`, `{{changed_lines}}`, `{{changed_lines.additions}}`, `{{changed_lines.deletions}}`, `{{changed_lines.total}}`.
@@ -355,7 +355,7 @@ Built-in providers (`localfs`, `sqlite`) have default prompts and don't need `pr
 
    After assessment, for impacts that DO need document updates:
    - **For localfs assets**: directly read and update the local file as indicated
-   - **For custom provider assets** (iwiki, notion, etc.): follow the `action_prompt` instructions, which may involve calling MCP tools, Skills, or other methods
+   - **For custom provider assets** (notion, confluence, etc.): follow the `action_prompt` instructions, which may involve calling MCP tools, Skills, or other methods
 
    For impacts that do NOT need document updates, skip directly to acknowledgement.
 3. After handling each impact, acknowledge it:

@@ -478,7 +478,7 @@ kamap provider list -o json
 
 ```bash
 kamap provider info --name localfs
-kamap provider info --name iwiki -o json
+kamap provider info --name notion -o json
 ```
 
 ---
@@ -533,10 +533,10 @@ Provider 定义了 kamap 在检测到影响时如何生成操作指引（`action
 
 ```yaml
 providers:
-  - name: iwiki
+  - name: notion
     prompt_template: |
-      代码变更影响了 iwiki 文档「{{asset.meta.title}}」(文档 ID: {{asset.target}})。
-      请通过 iwiki MCP 完成操作。
+      代码变更影响了 Notion 页面「{{asset.meta.title}}」(页面 ID: {{asset.target}})。
+      请通过 Notion MCP 完成操作。
 ```
 
 模板变量：`{{asset.id}}`、`{{asset.target}}`、`{{asset.type}}`、`{{asset.provider}}`、`{{asset.meta.*}}`、`{{source.path}}`、`{{source.file}}`、`{{source.hunks}}`、`{{reason}}`、`{{action}}`、`{{mapping_id}}`、`{{change_type}}`。
@@ -633,13 +633,13 @@ discovery:
 version: "1"
 
 providers:
-  - name: iwiki
+  - name: notion
     prompt_template: |
-      代码变更影响了 iwiki 文档「{{asset.meta.title}}」(文档 ID: {{asset.target}})。
+      代码变更影响了 Notion 页面「{{asset.meta.title}}」(页面 ID: {{asset.target}})。
       变更来源: {{source.path}}
       影响原因: {{reason}}
       建议操作: {{action}}
-      请通过 iwiki MCP 读取并更新文档。
+      请通过 Notion MCP 读取并更新页面。
 
 plugins:
   - name: localfs

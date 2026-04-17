@@ -6,7 +6,7 @@ use crate::models::{AssetDef, MappingDef};
 ///
 /// Provider 定义了 kamap 在检测到影响时如何生成操作指引。
 /// - 内置 provider（localfs、sqlite）无需 prompt_template，有默认 prompt
-/// - 自定义 provider（iwiki、notion 等）通过 prompt_template 定义操作指引模板
+/// - 自定义 provider（notion、confluence 等）通过 prompt_template 定义操作指引模板
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ProviderDef {
     pub name: String,
